@@ -4,3 +4,6 @@
 
 # Maven build directory
 /target
+
+# Environment variables
+.envrc
