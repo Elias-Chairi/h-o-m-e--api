@@ -11,8 +11,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,6 +100,53 @@ public class MysqlController {
                 }
             }
             return false;
+        }
+    }
+
+    /**
+     * Inserts a new home into the database.
+     * 
+     * @param homeName The name of the home to create.
+     * @return The ID of the created home.
+     * @throws SQLException if an error occurs while creating the home.
+     */
+    public String createHome(String homeName) throws SQLException{
+        try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+            String generatedHomeID = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+            String homeQuery = "INSERT INTO Home (home_id, name) VALUES (?, ?)";
+            try (PreparedStatement statement = connection.prepareStatement(homeQuery)) {
+                statement.setString(1, generatedHomeID);
+                statement.setString(2, homeName);
+                statement.executeUpdate();
+            }
+            return generatedHomeID;
+        }
+    }
+
+    /**
+     * Inserts a new resident into the database.
+     *
+     * @param homeID The ID of the home the resident belongs to.
+     * @param userName The name of the resident to create.
+     * @return The ID of the created resident.
+     * @throws SQLException if an error occurs while creating the resident.
+     */
+    public int createResident(String homeID, String userName) throws SQLException{
+        try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+            String userQuery = "INSERT INTO Resident (home_id, name) VALUES (?, ?)";
+            try (PreparedStatement statement = connection.prepareStatement(userQuery, Statement.RETURN_GENERATED_KEYS)) {
+                statement.setString(1, homeID);
+                statement.setString(2, userName);
+                statement.executeUpdate();
+        
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        return generatedKeys.getInt(1);
+                    } else {
+                        throw new SQLException("Failed to insert resident.");
+                    }
+                }
+            }
         }
     }
 
