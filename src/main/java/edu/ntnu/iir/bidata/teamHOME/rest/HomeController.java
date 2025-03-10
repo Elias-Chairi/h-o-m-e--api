@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.ntnu.iir.bidata.teamHOME.MysqlController;
 import edu.ntnu.iir.bidata.teamHOME.enity.CreateHomeReposponse;
 import edu.ntnu.iir.bidata.teamHOME.enity.CreateHomeRequest;
+import edu.ntnu.iir.bidata.teamHOME.enity.CreateUserReposponse;
+import edu.ntnu.iir.bidata.teamHOME.enity.CreateUserRequest;
 
 /**
  * Controller for the home endpoint.
@@ -63,4 +65,21 @@ public class HomeController {
 		}
 	}
 
+	/**
+	 * Create a user in a home.
+	 *
+	 * @param homeID The ID of the home to add the user to.
+	 * @param req    The request object containing the name of the user.
+	 * @return The response object containing the userID.
+	 */
+	@PostMapping("api/home/{homeID}")
+	public ResponseEntity<CreateUserReposponse> createUserInHome(@PathVariable("homeID") String homeID, @Valid @RequestBody CreateUserRequest req) {
+		try {
+			int userID = MysqlController.getInstance().createResident(homeID, req.getUserName());
+			return ResponseEntity.status(HttpStatus.CREATED).body(new CreateUserReposponse(userID));
+		} catch (SQLException e) {
+			logger.error("Failed to add user to home", e);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+	}
 }
