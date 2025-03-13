@@ -16,9 +16,9 @@ import edu.ntnu.iir.bidata.teamHOME.enity.CreateHomeReposponse;
 import edu.ntnu.iir.bidata.teamHOME.enity.CreateHomeRequest;
 import edu.ntnu.iir.bidata.teamHOME.enity.CreateUserReposponse;
 import edu.ntnu.iir.bidata.teamHOME.enity.CreateUserRequest;
-import edu.ntnu.iir.bidata.teamHOME.enity.GetTasksReposponse;
-import edu.ntnu.iir.bidata.teamHOME.enity.Task;
-import edu.ntnu.iir.bidata.teamHOME.enity.User;
+import edu.ntnu.iir.bidata.teamHOME.enity.GetTasksReposponse.GetTasksReposponse;
+import edu.ntnu.iir.bidata.teamHOME.enity.GetTasksReposponse.Task;
+import edu.ntnu.iir.bidata.teamHOME.enity.GetTasksReposponse.User;
 import edu.ntnu.iir.bidata.teamHOME.mysql.MysqlController;
 import edu.ntnu.iir.bidata.teamHOME.mysql.SQLEntityNotFoundException;
 import edu.ntnu.iir.bidata.teamHOME.mysql.SQLForeignKeyViolationException;
@@ -31,9 +31,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Controller for the home endpoint.
+ * Controller for the home endpoints.
  */
-@Tag(name = "Home", description = "The H.O.M.E. API")
+@Tag(name = "Home", description = "The Home API")
 @RestController
 public class HomeController {
 	// private SimpMessagingTemplate template;
@@ -44,8 +44,7 @@ public class HomeController {
 	 * 
 	 * @param homeID The ID of the home to check.
 	 * @return 200 OK if the home exists, 404 NOT FOUND if the home does not exist,
-	 *         or
-	 *         500 INTERNAL SERVER ERROR if an error occurred.
+	 *         or 500 INTERNAL SERVER ERROR if an error occurred.
 	 */
 	@Operation(summary = "Check if home exists", description = "Check if a home exists")
 	@ApiResponses(value = {
@@ -80,6 +79,7 @@ public class HomeController {
 	@Operation(summary = "Create home with user", description = "Create a home with a user")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "201", description = "Home successfully created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CreateHomeReposponse.class))),
+			@ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content),
 
 	})
@@ -107,6 +107,7 @@ public class HomeController {
 	@Operation(summary = "Create user in home", description = "Create a user in a home")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "201", description = "User successfully created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CreateUserReposponse.class))),
+			@ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
 			@ApiResponse(responseCode = "404", description = "Home not found", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content),
 

@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME.enity;
+package edu.ntnu.iir.bidata.teamHOME.enity.GetTasksReposponse;
 
 /**
  * Represents a user.
