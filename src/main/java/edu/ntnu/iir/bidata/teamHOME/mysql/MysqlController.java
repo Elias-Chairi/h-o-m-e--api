@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME;
+package edu.ntnu.iir.bidata.teamHOME.mysql;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -9,13 +9,17 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.ntnu.iir.bidata.teamHOME.enity.Task;
+import edu.ntnu.iir.bidata.teamHOME.enity.User;
 import edu.ntnu.iir.bidata.teamHOME.rest.HomeController;
 
 /**
@@ -31,7 +35,6 @@ public class MysqlController {
     private MysqlController() {
         // private constructor
         this.connectionString = System.getenv("AZURE_MYSQL_CONNECTIONSTRING");
-
     }
 
     private static List<String> getQueriesFromResourceSchema(String filename) throws IOException {
@@ -63,7 +66,7 @@ public class MysqlController {
     public void createTables() throws SQLException {
         try (Connection connection = DriverManager.getConnection(this.connectionString)) {
             logger.debug("Creating tables in MySQL database");
-            
+
             List<String> queries;
             try {
                 queries = getQueriesFromResourceSchema("/schema.sql");
@@ -84,22 +87,25 @@ public class MysqlController {
     }
 
     /**
-     * Checks if a home exists in the database.
+     * Gets the home name from the database.
      *
-     * @return true if the home exists, false otherwise
+     * @param homeID The ID of the home to get the name of.
+     * @return The name of the home.
+     * @throws SQLEntityNotFoundException if the home is not found.
+     * @throws SQLException if an error occurs while getting the home name.
      */
-    public boolean isHome(String homeID) throws SQLException {
+    public String getHomeName(String homeID) throws SQLException {
         try (Connection connection = DriverManager.getConnection(this.connectionString)) {
-            String query = "SELECT 1 AS 'isHome' FROM Home WHERE home_id = ?";
+            String query = "SELECT name FROM Home WHERE home_id = ?";
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setString(1, homeID);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {
-                        return resultSet.getInt("isHome") == 1;
+                        return resultSet.getString(1);
                     }
+                    throw new SQLEntityNotFoundException("Home not found");
                 }
             }
-            return false;
         }
     }
 
@@ -110,7 +116,7 @@ public class MysqlController {
      * @return The ID of the created home.
      * @throws SQLException if an error occurs while creating the home.
      */
-    public String createHome(String homeName) throws SQLException{
+    public String createHome(String homeName) throws SQLException {
         try (Connection connection = DriverManager.getConnection(this.connectionString)) {
             String generatedHomeID = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
             String homeQuery = "INSERT INTO Home (home_id, name) VALUES (?, ?)";
@@ -126,25 +132,81 @@ public class MysqlController {
     /**
      * Inserts a new resident into the database.
      *
-     * @param homeID The ID of the home the resident belongs to.
+     * @param homeID   The ID of the home the resident belongs to.
      * @param userName The name of the resident to create.
      * @return The ID of the created resident.
+     * @throws SQLForeignKeyViolationException if the home is not found.
      * @throws SQLException if an error occurs while creating the resident.
      */
-    public int createResident(String homeID, String userName) throws SQLException{
+    public int createResident(String homeID, String userName) throws SQLException {
         try (Connection connection = DriverManager.getConnection(this.connectionString)) {
             String userQuery = "INSERT INTO Resident (home_id, name) VALUES (?, ?)";
-            try (PreparedStatement statement = connection.prepareStatement(userQuery, Statement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement statement = connection.prepareStatement(userQuery,
+                    Statement.RETURN_GENERATED_KEYS)) {
                 statement.setString(1, homeID);
                 statement.setString(2, userName);
                 statement.executeUpdate();
-        
+
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         return generatedKeys.getInt(1);
                     } else {
                         throw new SQLException("Failed to insert resident.");
                     }
+                }
+            } catch (SQLIntegrityConstraintViolationException e) {
+                throw new SQLForeignKeyViolationException("Home not found");
+            }
+        }
+    }
+
+    /**
+     * Gets all users in a home.
+     *
+     * @param homeID
+     * @return A list of users in the home.
+     * @throws SQLEntityNotFoundException if no users are found in the home.
+     * @throws SQLException if an error occurs while getting the users.
+     */
+    public List<User> getUsers(String homeID) throws SQLException {
+        try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+            String query = "SELECT resident_id, name FROM Resident WHERE home_id = ?";
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setString(1, homeID);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    List<User> users = new ArrayList<>();
+                    while (resultSet.next()) {
+                        users.add(new User(resultSet.getInt(1), resultSet.getString(2)));
+                    }
+                    if (users.isEmpty()) {
+                        throw new SQLEntityNotFoundException("No users found in home");
+                    }
+                    return users;
+                }
+            }
+        }
+    }
+
+    /**
+     * Gets all tasks in a home.
+     *
+     * @param homeID The ID of the home to get tasks from.
+     * @return A list of users in the home.
+     */
+    public List<Task> getTasks(String homeID) throws SQLException {
+        try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+            String query = "SELECT task_id, name, description, assignedTo, due, created, createdBy, done, recurrence_id FROM Task WHERE createdBy IN (SELECT resident_id FROM Resident WHERE home_id = ?);";
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setString(1, homeID);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    List<Task> tasks = List.of();
+                    while (resultSet.next()) {
+                        tasks.add(new Task(resultSet.getInt(1),
+                                resultSet.getString(2), resultSet.getString(3), resultSet.getInt(4),
+                                resultSet.getDate(5).toLocalDate(), resultSet.getDate(6).toLocalDate(),
+                                resultSet.getInt(7), resultSet.getBoolean(8), resultSet.getInt(9)));
+                    }
+                    return tasks;
                 }
             }
         }

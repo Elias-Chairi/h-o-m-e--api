@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
+import edu.ntnu.iir.bidata.teamHOME.mysql.MysqlController;
 import edu.ntnu.iir.bidata.teamHOME.rest.HomeController;
 
 /**
