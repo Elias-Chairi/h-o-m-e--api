@@ -31,34 +31,34 @@ public class TaskController {
     // private SimpMessagingTemplate template;
     private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 
-    /**
-     * Create a task.
-     * 
-     * @param req The request object containing the task details.
-     * @return 201 CREATED if the task was created, 400 BAD REQUEST if the request
-     *         is invalid, 422 UNPROCESSABLE ENTITY if the request is valid but has
-     *         invalid values or 500 INTERNAL SERVER ERROR if an error occurred.
-     */
-    @Operation(summary = "Create a task", description = "Create a task")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Task created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponseTask.class))),
-            @ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
-            @ApiResponse(responseCode = "422", description = "Unprocessable entity", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content),
+    // /**
+    //  * Create a task.
+    //  * 
+    //  * @param req The request object containing the task details.
+    //  * @return 201 CREATED if the task was created, 400 BAD REQUEST if the request
+    //  *         is invalid, 422 UNPROCESSABLE ENTITY if the request is valid but has
+    //  *         invalid values or 500 INTERNAL SERVER ERROR if an error occurred.
+    //  */
+    // @Operation(summary = "Create a task", description = "Create a task")
+    // @ApiResponses(value = {
+    //         @ApiResponse(responseCode = "201", description = "Task created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponseTask.class))),
+    //         @ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
+    //         @ApiResponse(responseCode = "422", description = "Unprocessable entity", content = @Content),
+    //         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content),
 
-    })
-    @PostMapping("/api/task")
-    public ResponseEntity<ApiResponseTask> createTask(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody @RequestBody @Valid CreateTaskRequest req) {
-        try {
-            Task task = MysqlController.getInstance().createTask(req);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ApiResponseTask("New task created", task));
-        } catch (SQLForeignKeyViolationException e) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
-        } catch (SQLException e) {
-            logger.error("Failed to create task", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+    // })
+    // @PostMapping("/api/task")
+    // public ResponseEntity<ApiResponseTask> createTask(
+    //         @io.swagger.v3.oas.annotations.parameters.RequestBody @RequestBody @Valid CreateTaskRequest req) {
+    //     try {
+    //         Task task = MysqlController.getInstance().createTask(req);
+    //         return ResponseEntity.status(HttpStatus.CREATED)
+    //                 .body(new ApiResponseTask("New task created", task));
+    //     } catch (SQLForeignKeyViolationException e) {
+    //         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+    //     } catch (SQLException e) {
+    //         logger.error("Failed to create task", e);
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    //     }
+    // }
 }
