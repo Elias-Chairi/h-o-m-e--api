@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME;
+package edu.ntnu.iir.bidata.teamHOME.config;
 
 import java.sql.SQLException;
 
@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
-import edu.ntnu.iir.bidata.teamHOME.mysql.MysqlController;
-import edu.ntnu.iir.bidata.teamHOME.rest.HomeController;
+import edu.ntnu.iir.bidata.teamHOME.controller.HomeController;
+import edu.ntnu.iir.bidata.teamHOME.service.MysqlService;
 
 /**
  * Responsible for initializing processes that need to be completed before the application can start.
@@ -29,7 +29,7 @@ public class Initializer implements SmartLifecycle {
         // Initialize the MySQL database
         logger.info("Creating tables in MySQL database");
         try {
-            MysqlController.getInstance().createTables();
+            MysqlService.getInstance().createTables();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to initialize MySQL database", e);
         }

@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME.enity.data;
+package edu.ntnu.iir.bidata.teamHOME.enity;
 
 public class Resident {
     private int id;

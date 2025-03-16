@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME.mysql;
+package edu.ntnu.iir.bidata.teamHOME.service.exception;
 
 import java.sql.SQLException;
 

@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME.rest;
+package edu.ntnu.iir.bidata.teamHOME.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,32 +19,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import edu.ntnu.iir.bidata.teamHOME.enity.CreateHomeRequest;
 import edu.ntnu.iir.bidata.teamHOME.enity.CreateUserRequest;
-import edu.ntnu.iir.bidata.teamHOME.enity.data.Home;
-import edu.ntnu.iir.bidata.teamHOME.enity.data.Resident;
-import edu.ntnu.iir.bidata.teamHOME.enity.data.Task;
+import edu.ntnu.iir.bidata.teamHOME.enity.Home;
+import edu.ntnu.iir.bidata.teamHOME.enity.Resident;
+import edu.ntnu.iir.bidata.teamHOME.enity.Task;
 import edu.ntnu.iir.bidata.teamHOME.enity.response.ApiResponseHomeDetails;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.CompoundDocumentHome;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.TopLevelHome;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.jsonapi.RelationshipObjectToMany;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.jsonapi.ResourceIdentifierObject;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.jsonapi.ResourceObject;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.jsonapi.TopLevel;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.resources.HomesResource;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.resources.ResidentsAttributes;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.resources.ResidentsResource;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.resources.TasksAttributes;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.resources.TasksResource;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.resources.HomesAttributes;
-// import edu.ntnu.iir.bidata.teamHOME.enity.response.User;
-// import edu.ntnu.iir.bidata.teamHOME.enity.response.Home;
-// import edu.ntnu.iir.bidata.teamHOME.enity.response.HomeDetails;
-// import edu.ntnu.iir.bidata.teamHOME.enity.response.Task;
-// import edu.ntnu.iir.bidata.teamHOME.enity.response.ApiResponseHomeDetails;
-// import edu.ntnu.iir.bidata.teamHOME.enity.response.ApiResponseHomeUser;
-// import edu.ntnu.iir.bidata.teamHOME.enity.response.ApiResponseUser;
-import edu.ntnu.iir.bidata.teamHOME.mysql.MysqlController;
-import edu.ntnu.iir.bidata.teamHOME.mysql.SQLEntityNotFoundException;
-import edu.ntnu.iir.bidata.teamHOME.mysql.SQLForeignKeyViolationException;
+import edu.ntnu.iir.bidata.teamHOME.response.jsonapi.RelationshipObjectToMany;
+import edu.ntnu.iir.bidata.teamHOME.response.jsonapi.ResourceIdentifierObject;
+import edu.ntnu.iir.bidata.teamHOME.response.jsonapi.ResourceObject;
+import edu.ntnu.iir.bidata.teamHOME.response.jsonapi.TopLevel;
+import edu.ntnu.iir.bidata.teamHOME.response.resourceObject.HomesResource;
+import edu.ntnu.iir.bidata.teamHOME.response.resourceObject.ResidentsResource;
+import edu.ntnu.iir.bidata.teamHOME.response.resourceObject.TasksResource;
+import edu.ntnu.iir.bidata.teamHOME.response.topLevel.CompoundDocumentHome;
+import edu.ntnu.iir.bidata.teamHOME.response.topLevel.TopLevelHome;
+import edu.ntnu.iir.bidata.teamHOME.service.MysqlService;
+import edu.ntnu.iir.bidata.teamHOME.service.exception.SQLEntityNotFoundException;
+import edu.ntnu.iir.bidata.teamHOME.service.exception.SQLForeignKeyViolationException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -202,17 +192,17 @@ public class HomeController {
 			@Parameter(description = "The resources to include in the response (residents,tasks)") @RequestParam(required = false) String include) {
 		try {
 
-			MysqlController mysqlController = MysqlController.getInstance();
+			MysqlService mysqlService = MysqlService.getInstance();
 
 			List<Resident> residents = null;
 			if (associatedWithUserID != null) {
-				residents = mysqlController.getResidents(homeID);
+				residents = mysqlService.getResidents(homeID);
 				if (residents.stream().noneMatch(user -> user.getId() == associatedWithUserID)) {
 					return ResponseEntity.status(HttpStatus.CONFLICT).build();
 				}
 			}
 
-			Home home = mysqlController.getHome(homeID);
+			Home home = mysqlService.getHome(homeID);
 
 			Map<String, RelationshipObjectToMany> relationships = new HashMap<>();
 			List<ResourceObject<?>> included = new ArrayList<>();
@@ -221,31 +211,24 @@ public class HomeController {
 				for (String includedResource : includedResources) {
 					switch (includedResource) {
 						case "tasks":
-							List<Task> tasks = mysqlController.getTasks(homeID);
+							List<Task> tasks = mysqlService.getTasks(homeID);
 							List<ResourceIdentifierObject> taskIdentifers = new ArrayList<>();
 							for (Task task : tasks) {
 								taskIdentifers
 										.add(new ResourceIdentifierObject("tasks", Integer.toString(task.getId())));
-								included.add(new TasksResource(
-										Integer.toString(task.getId()),
-										new TasksAttributes(task.getName(), task.getDescription(), task.getAssignedTo(),
-												task.getDue(), task.getCreated(), task.getCreatedBy(), task.isDone(),
-												task.getRecurrenceID()),
-										null));
+								included.add(new TasksResource(task,null));
 							}
 							relationships.put("tasks", new RelationshipObjectToMany(taskIdentifers));
 							break;
 						case "residents":
 							if (residents == null) {
-								residents = mysqlController.getResidents(homeID);
+								residents = mysqlService.getResidents(homeID);
 							}
 							List<ResourceIdentifierObject> residentIdentifers = new ArrayList<>();
 							for (Resident resident : residents) {
 								residentIdentifers.add(
 										new ResourceIdentifierObject("residents", Integer.toString(resident.getId())));
-								included.add(new ResidentsResource(Integer.toString(resident.getId()),
-										new ResidentsAttributes(resident.getName()),
-										null));
+								included.add(new ResidentsResource(resident, null));
 							}
 							relationships.put("residents", new RelationshipObjectToMany(residentIdentifers));
 							break;
@@ -261,8 +244,7 @@ public class HomeController {
 				included = null;
 			}
 
-			HomesResource homeResource = new HomesResource(home.getId(), new HomesAttributes(home.getName()),
-					relationships);
+			HomesResource homeResource = new HomesResource(home, null);
 			return ResponseEntity.ok(new CompoundDocumentHome(homeResource, included));
 		} catch (SQLEntityNotFoundException e) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

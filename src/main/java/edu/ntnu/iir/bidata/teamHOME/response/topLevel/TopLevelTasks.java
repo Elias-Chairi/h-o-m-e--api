@@ -1,9 +1,9 @@
-package edu.ntnu.iir.bidata.teamHOME.enity.response2;
+package edu.ntnu.iir.bidata.teamHOME.response.topLevel;
 
 import java.util.List;
 
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.jsonapi.TopLevel;
-import edu.ntnu.iir.bidata.teamHOME.enity.response2.resources.TasksResource;
+import edu.ntnu.iir.bidata.teamHOME.response.jsonapi.TopLevel;
+import edu.ntnu.iir.bidata.teamHOME.response.resourceObject.TasksResource;
 
 /**
  * Represents the top level of a home resource.

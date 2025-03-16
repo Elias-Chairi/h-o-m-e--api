@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME.rest;
+package edu.ntnu.iir.bidata.teamHOME.controller;
 
 import java.sql.SQLException;
 
@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.ntnu.iir.bidata.teamHOME.enity.CreateTaskRequest;
 import edu.ntnu.iir.bidata.teamHOME.enity.response.ApiResponseTask;
 import edu.ntnu.iir.bidata.teamHOME.enity.response.Task;
-import edu.ntnu.iir.bidata.teamHOME.mysql.MysqlController;
-import edu.ntnu.iir.bidata.teamHOME.mysql.SQLForeignKeyViolationException;
+import edu.ntnu.iir.bidata.teamHOME.service.MysqlService;
+import edu.ntnu.iir.bidata.teamHOME.service.exception.SQLForeignKeyViolationException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

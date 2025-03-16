@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME.mysql;
+package edu.ntnu.iir.bidata.teamHOME.service;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -19,32 +19,31 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import edu.ntnu.iir.bidata.teamHOME.controller.HomeController;
 import edu.ntnu.iir.bidata.teamHOME.enity.CreateTaskRequest;
-import edu.ntnu.iir.bidata.teamHOME.enity.data.Home;
-import edu.ntnu.iir.bidata.teamHOME.enity.data.Resident;
-import edu.ntnu.iir.bidata.teamHOME.enity.data.Task;
-// import edu.ntnu.iir.bidata.teamHOME.enity.response.Home;
-// import edu.ntnu.iir.bidata.teamHOME.enity.response.Task;
-// import edu.ntnu.iir.bidata.teamHOME.enity.response.User;
-import edu.ntnu.iir.bidata.teamHOME.rest.HomeController;
+import edu.ntnu.iir.bidata.teamHOME.enity.Home;
+import edu.ntnu.iir.bidata.teamHOME.enity.Resident;
+import edu.ntnu.iir.bidata.teamHOME.enity.Task;
+import edu.ntnu.iir.bidata.teamHOME.service.exception.SQLEntityNotFoundException;
 
 /**
  * Controller for interacting with the MySQL database. Uses the Singleton
  * pattern.
  */
-public class MysqlController {
+public class MysqlService {
 
     private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
-    private static MysqlController instance = null;
+    private static MysqlService instance = null;
     private String connectionString;
 
-    private MysqlController() {
+    private MysqlService() {
         // private constructor
         this.connectionString = System.getenv("AZURE_MYSQL_CONNECTIONSTRING");
     }
 
     private static List<String> getQueriesFromResourceSchema(String filename) throws IOException {
-        InputStream in = MysqlController.class.getResourceAsStream(filename);
+        InputStream in = MysqlService.class.getResourceAsStream(filename);
         if (in == null) {
             throw new FileNotFoundException("Cannot find sql schema");
         }
@@ -314,11 +313,11 @@ public class MysqlController {
      *
      * @return the instance of the MysqlController
      */
-    public static MysqlController getInstance() {
-        if (MysqlController.instance == null) {
-            MysqlController.instance = new MysqlController();
+    public static MysqlService getInstance() {
+        if (MysqlService.instance == null) {
+            MysqlService.instance = new MysqlService();
         }
-        return MysqlController.instance;
+        return MysqlService.instance;
     }
 
 }

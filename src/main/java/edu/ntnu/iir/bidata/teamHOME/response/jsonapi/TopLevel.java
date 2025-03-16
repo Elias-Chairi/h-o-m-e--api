@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME.enity.response2.jsonapi;
+package edu.ntnu.iir.bidata.teamHOME.response.jsonapi;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

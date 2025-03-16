@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME.enity.response2.jsonapi;
+package edu.ntnu.iir.bidata.teamHOME.response.jsonapi;
 
 /**
  * Represents a resource identifier object.

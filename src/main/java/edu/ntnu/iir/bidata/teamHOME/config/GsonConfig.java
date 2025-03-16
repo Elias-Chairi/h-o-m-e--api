@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamHOME;
+package edu.ntnu.iir.bidata.teamHOME.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
