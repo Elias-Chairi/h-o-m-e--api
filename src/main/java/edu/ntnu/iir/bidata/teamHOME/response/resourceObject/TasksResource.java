@@ -1,88 +1,109 @@
-package edu.ntnu.iir.bidata.teamHOME.response.resourceObject;
+package edu.ntnu.iir.bidata.teamhome.response.resourceobject;
 
+import edu.ntnu.iir.bidata.teamhome.enity.Task;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.Map;
-import edu.ntnu.iir.bidata.teamHOME.enity.Task;
-import edu.ntnu.iir.bidata.teamHOME.response.jsonapi.RelationshipObjectToMany;
-import edu.ntnu.iir.bidata.teamHOME.response.jsonapi.ResourceObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Represents a user resource.
  */
 public class TasksResource extends ResourceObject<TasksResource.TasksAttributes> {
-    private static final String type = "tasks";
+  private static final String type = "tasks";
 
-    public static class TasksAttributes {
-        private String name;
-        private String description;
-        private Integer assignedTo;
-        LocalDate due;
-        LocalDate created;
-        private int createdBy;
-        private boolean done;
-        private Integer recurrenceID;
+  /**
+   * Represents the attributes of a user resource.
+   */
+  public static class TasksAttributes {
+    @NotBlank
+    @Size(min = 2, max = 100)
+    private String name;
 
-        public TasksAttributes(String name, String description, Integer assignedTo, LocalDate due, LocalDate created,
-                int createdBy, boolean done, Integer recurrenceID) {
-            this.name = name;
-            this.description = description;
-            this.assignedTo = assignedTo;
-            this.due = due;
-            this.created = created;
-            this.createdBy = createdBy;
-            this.done = done;
-            this.recurrenceID = recurrenceID;
-        }
+    @Size(max = 500)
+    private String description;
 
-        public String getName() {
-            return name;
-        }
+    private Integer assignedTo;
+    LocalDate due;
+    LocalDate created;
 
-        public String getDescription() {
-            return description;
-        }
+    @NotNull
+    private int createdBy;
 
-        public Integer getAssignedTo() {
-            return assignedTo;
-        }
+    private boolean done;
+    private Integer recurrenceId;
 
-        public LocalDate getDue() {
-            return due;
-        }
-
-        public LocalDate getCreated() {
-            return created;
-        }
-
-        public int getCreatedBy() {
-            return createdBy;
-        }
-
-        public boolean isDone() {
-            return done;
-        }
-
-        public Integer getRecurrenceID() {
-            return recurrenceID;
-        }
+    /**
+     * Creates a new task attributes.
+     */
+    public TasksAttributes(String name, String description, Integer assignedTo, LocalDate due,
+        LocalDate created, int createdBy, boolean done, Integer recurrenceId) {
+      this.name = name;
+      this.description = description;
+      this.assignedTo = assignedTo;
+      this.due = due;
+      this.created = created;
+      this.createdBy = createdBy;
+      this.done = done;
+      this.recurrenceId = recurrenceId;
     }
 
-    private TasksResource(String id, TasksAttributes attributes, Map<String, RelationshipObjectToMany> relationships) {
-        super(id, type, attributes, relationships);
+    public String getName() {
+      return name;
     }
 
-    public TasksResource(Task task, Map<String, RelationshipObjectToMany> relationships) {
-        this(Integer.toString(task.getId()),
-                new TasksAttributes(task.getName(), task.getDescription(), task.getAssignedTo(),
-                        task.getDue(), task.getCreated(), task.getCreatedBy(), task.isDone(),
-                        task.getRecurrenceID()),
-                relationships);
+    public String getDescription() {
+      return description;
     }
 
-    @Schema(example = type)
-    @Override
-    public String getType() {
-        return type;
+    public Integer getAssignedTo() {
+      return assignedTo;
     }
+
+    public LocalDate getDue() {
+      return due;
+    }
+
+    public LocalDate getCreated() {
+      return created;
+    }
+
+    public int getCreatedBy() {
+      return createdBy;
+    }
+
+    public boolean isDone() {
+      return done;
+    }
+
+    public Integer getRecurrenceId() {
+      return recurrenceId;
+    }
+  }
+
+  private TasksResource(String id, TasksAttributes attributes,
+      Map<String, RelationshipObject> relationships) {
+    super(id, type, attributes, relationships);
+  }
+
+  /**
+   * Creates a new task resource.
+   */
+  public TasksResource(Task task, Map<String, RelationshipObject> relationships) {
+    this(Integer.toString(task.getId()),
+        new TasksAttributes(task.getName(), task.getDescription(), task.getAssignedTo(),
+            task.getDue(), task.getCreated(), task.getCreatedBy(), task.isDone(),
+            task.getRecurrenceId()),
+        relationships);
+  }
+
+  @Schema(example = type)
+  @Override
+  public String getType() {
+    return type;
+  }
 }
