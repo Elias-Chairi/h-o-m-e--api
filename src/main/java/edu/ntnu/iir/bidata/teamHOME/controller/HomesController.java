@@ -3,6 +3,7 @@ package edu.ntnu.iir.bidata.teamhome.controller;
 import edu.ntnu.iir.bidata.teamhome.enity.Home;
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToMany;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceObject;
@@ -22,6 +23,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.net.URI;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,9 +37,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /** Controller for the home endpoints. */
 @Tag(name = "Home", description = "The Home API")
@@ -72,12 +74,13 @@ public class HomesController {
   @PostMapping("/api/homes")
   public ResponseEntity<TopLevelHome> createHome(
       @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody TopLevelHome req,
-      @RequestHeader String host) {
+      UriComponentsBuilder uriBuilder) {
     try {
       Home home =
           MysqlService.getInstance().createHome(EntityResourceMapper.fromResource(req.getData()));
-      return ResponseEntity.status(HttpStatus.CREATED)
-          .header("Location", String.format("https://%s/api/homes/%s", host, home.getId()))
+      URI location =
+          uriBuilder.path("/api/homes/{id}").buildAndExpand(home.getId()).toUri();
+      return ResponseEntity.created(location)
           .body(new TopLevelHome(new HomesResource(home, null)));
     } catch (SQLException e) {
       logger.error("Failed to create home", e);
@@ -89,7 +92,6 @@ public class HomesController {
    * Get home.
    *
    * @param homeId The ID of the home to get tasks from.
-   * @param associatedWithUserId (optional) The ID of the user that requested the tasks.
    * @param include (optional) The resources to include in the response.
    * @return The response object containing the home details.
    */
@@ -103,40 +105,25 @@ public class HomesController {
                 @Content(
                     mediaType = "application/json",
                     schema = @Schema(implementation = CompoundDocumentHome.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
         @ApiResponse(responseCode = "404", description = "Home not found", content = @Content),
-        @ApiResponse(
-            responseCode = "409",
-            description = "User not associated withhome",
-            content = @Content),
         @ApiResponse(
             responseCode = "500",
             description = "Internal server error",
             content = @Content),
       })
-  @GetMapping("api/homes/{homeID}")
+  @GetMapping("/api/homes/{homeId}")
   public ResponseEntity<CompoundDocumentHome> getHome(
-      @Parameter(description = "The ID of the home to get") @PathVariable("homeID") String homeId,
-      @Parameter(description = "To get CONFLICT status for userIDs not in home")
-          @RequestParam(required = false)
-          Integer associatedWithUserId,
+      @Parameter(description = "The ID of the home to get") @PathVariable String homeId,
       @Parameter(description = "The resources to include in the response (residents,tasks)")
           @RequestParam(required = false)
           String include) {
     try {
-
       MysqlService mysqlService = MysqlService.getInstance();
-
       List<Resident> residents = null;
-      if (associatedWithUserId != null) {
-        residents = mysqlService.getResidents(homeId);
-        if (residents.stream().noneMatch(user -> user.getId() == associatedWithUserId)) {
-          return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
-      }
-
       final Home home = mysqlService.getHome(homeId);
 
-      Map<String, RelationshipObjectToMany> relationships = new HashMap<>();
+      Map<String, RelationshipObject> relationships = new HashMap<>();
       List<ResourceObject<?>> included = new ArrayList<>();
       if (include != null) {
         String[] includedResources = include.split(",");
@@ -178,7 +165,7 @@ public class HomesController {
         included = null;
       }
 
-      HomesResource homeResource = new HomesResource(home, null);
+      HomesResource homeResource = new HomesResource(home, relationships);
       return ResponseEntity.ok(new CompoundDocumentHome(homeResource, included));
     } catch (DbEntityNotFoundException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

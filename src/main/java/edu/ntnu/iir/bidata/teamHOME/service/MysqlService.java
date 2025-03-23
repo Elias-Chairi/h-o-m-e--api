@@ -171,7 +171,6 @@ public class MysqlService {
    *
    * @param homeId The ID of the home to get residents from.
    * @return A list of residents in the home.
-   * @throws DbEntityNotFoundException if no residents are found in the home.
    * @throws SQLException               if an error occurs while getting the
    *                                    residents.
    */
@@ -185,9 +184,6 @@ public class MysqlService {
           while (resultSet.next()) {
             residents.add(
                 new Resident(resultSet.getInt(1), resultSet.getString(2), resultSet.getString(3)));
-          }
-          if (residents.isEmpty()) {
-            throw new DbEntityNotFoundException("No residents found in home");
           }
           return residents;
         }
@@ -225,9 +221,16 @@ public class MysqlService {
             if (resultSet.wasNull()) {
               recurrenceId = null;
             }
-            tasks.add(new Task(resultSet.getInt(1), resultSet.getString(2), resultSet.getString(3),
-                assignedTo, due, resultSet.getDate(6).toLocalDate(),
-                resultSet.getInt(7), resultSet.getBoolean(8), recurrenceId));
+            tasks.add(new Task(
+                resultSet.getInt(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                assignedTo,
+                due,
+                resultSet.getDate(6).toLocalDate(),
+                resultSet.getInt(7),
+                resultSet.getBoolean(8),
+                recurrenceId));
           }
           return tasks;
         }
@@ -235,79 +238,93 @@ public class MysqlService {
     }
   }
 
-  // /**
-  //  * Creates a task in the database.
-  //  *
-  //  * @param req
-  //  * @throws SQLIntegrityConstraintViolationException if the assignedTo, createdBy
-  //  *                                                  or recurrence_id is not
-  //  *                                                  found.
-  //  * @throws SQLException
-  //  */
-  // public Task createTask(CreateTaskRequest req) throws SQLException {
-  //     try (Connection connection = DriverManager.getConnection(this.connectionString)) {
-  //         String taskQuery = "INSERT INTO Task (name, description, assignedTo, due, createdBy, done, recurrence_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
-  //         int taskID;
-  //         try (PreparedStatement statement = connection.prepareStatement(taskQuery,
-  //                 Statement.RETURN_GENERATED_KEYS)) {
-  //             statement.setString(1, req.getName());
-  //             statement.setString(2, req.getDescription());
-  //             if (req.getAssignedTo() == null) {
-  //                 statement.setNull(3, java.sql.Types.INTEGER);
-  //             } else {
-  //                 statement.setInt(3, req.getAssignedTo());
-  //             }
-  //             if (req.getDue() == null) {
-  //                 statement.setNull(4, java.sql.Types.DATE);
-  //             } else {
-  //                 statement.setDate(4, java.sql.Date.valueOf(req.getDue()));
-  //             }
-  //             statement.setInt(5, req.getCreatedBy());
-  //             statement.setBoolean(6, req.isDone());
-  //             if (req.getRecurrenceID() == null) {
-  //                 statement.setNull(7, java.sql.Types.INTEGER);
-  //             } else {
-  //                 statement.setInt(7, req.getRecurrenceID());
-  //             }
-  //             statement.executeUpdate();
+  /**
+   * Creates a task in the database.
+   *
+   * @param task The task to create.
+   * @return The created task.
+   * @throws DbForeignKeyViolationException if the assignedTo, createdBy
+   *                                                  or recurrence_id is not
+   *                                                  found.
+   * @throws SQLException if an error occurs while creating the task.
+   */
+  public Task createTask(Task task) throws SQLException {
+    try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+      final String taskQuery = "INSERT INTO Task "
+          + "(name, description, assignedTo, due, createdBy, done, recurrence_id)"
+          + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+      int taskId;
+      try (PreparedStatement statement = connection.prepareStatement(taskQuery,
+          Statement.RETURN_GENERATED_KEYS)) {
+        statement.setString(1, task.getName());
+        statement.setString(2, task.getDescription());
+        if (task.getAssignedTo() == null) {
+          statement.setNull(3, java.sql.Types.INTEGER);
+        } else {
+          statement.setInt(3, task.getAssignedTo());
+        }
+        if (task.getDue() == null) {
+          statement.setNull(4, java.sql.Types.DATE);
+        } else {
+          statement.setDate(4, java.sql.Date.valueOf(task.getDue()));
+        }
+        statement.setInt(5, task.getCreatedBy());
+        statement.setBoolean(6, task.isDone());
+        if (task.getRecurrenceId() == null) {
+          statement.setNull(7, java.sql.Types.INTEGER);
+        } else {
+          statement.setInt(7, task.getRecurrenceId());
+        }
+        statement.executeUpdate();
 
-  //             try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-  //                 if (generatedKeys.next()) {
-  //                     taskID = generatedKeys.getInt(1);
-  //                 } else {
-  //                     throw new SQLException("Failed to insert task.");
-  //                 }
-  //             }
-  //         } catch (SQLIntegrityConstraintViolationException e) {
-  //             throw new SQLForeignKeyViolationException("assignedTo, createdBy or recurrence_id not found");
-  //         }
-  //         String taskQuery2 = "SELECT name, task_id, description, assignedTo, due, created, createdBy, done, recurrence_id FROM Task WHERE task_id = ?";
-  //         try (PreparedStatement statement = connection.prepareStatement(taskQuery2)) {
-  //             statement.setInt(1, taskID);
-  //             try (ResultSet resultSet = statement.executeQuery()) {
-  //                 if (resultSet.next()) {
-  //                     Date sqldue = resultSet.getDate(5);
-  //                     LocalDate due = null;
-  //                     if (sqldue != null) {
-  //                         due = sqldue.toLocalDate();
-  //                     }
-  //                     Integer assignedTo = resultSet.getInt(4);
-  //                     if (resultSet.wasNull()) {
-  //                         assignedTo = null;
-  //                     }
-  //                     Integer recurrenceID = resultSet.getInt(9);
-  //                     if (resultSet.wasNull()) {
-  //                         recurrenceID = null;
-  //                     }
-  //                     return new Task(resultSet.getString(1), resultSet.getInt(2), resultSet.getString(3),
-  //                             assignedTo, due, resultSet.getDate(6).toLocalDate(),
-  //                             resultSet.getInt(7), resultSet.getBoolean(8), recurrenceID);
-  //                 }
-  //                 throw new SQLEntityNotFoundException("Task not found after creation");
-  //             }
-  //         }
-  //     }
-  // }
+        try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+          if (generatedKeys.next()) {
+            taskId = generatedKeys.getInt(1);
+          } else {
+            throw new SQLException("Failed to insert task.");
+          }
+        }
+      } catch (SQLIntegrityConstraintViolationException e) {
+        throw new DbForeignKeyViolationException(
+            "assignedTo, createdBy or recurrence_id not found");
+      }
+      final String taskQuery2 = "SELECT "
+          + "task_id, name, description, assignedTo, due, created, createdBy, done, recurrence_id "
+          + "FROM Task WHERE task_id = ?";
+      // need to get the task again to get the created date
+      try (PreparedStatement statement = connection.prepareStatement(taskQuery2)) {
+        statement.setInt(1, taskId);
+        try (ResultSet resultSet = statement.executeQuery()) {
+          if (resultSet.next()) {
+            Date sqldue = resultSet.getDate(5);
+            LocalDate due = null;
+            if (sqldue != null) {
+              due = sqldue.toLocalDate();
+            }
+            Integer assignedTo = resultSet.getInt(4);
+            if (resultSet.wasNull()) {
+              assignedTo = null;
+            }
+            Integer recurrenceId = resultSet.getInt(9);
+            if (resultSet.wasNull()) {
+              recurrenceId = null;
+            }
+            return new Task(
+                resultSet.getInt(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                assignedTo,
+                due,
+                resultSet.getDate(6).toLocalDate(),
+                resultSet.getInt(7),
+                resultSet.getBoolean(8),
+                recurrenceId);
+          }
+          throw new DbEntityNotFoundException("Task not found after creation");
+        }
+      }
+    }
+  }
 
   /**
    * Returns the instance of the MysqlController.

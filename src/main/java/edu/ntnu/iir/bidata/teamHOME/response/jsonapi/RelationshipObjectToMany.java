@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Represents a relationship object with a to-many relationship.
  */
-public class RelationshipObjectToMany implements RelationshipObject {
+public class RelationshipObjectToMany extends RelationshipObject {
   private List<ResourceIdentifierObject> data;
 
   public RelationshipObjectToMany(List<ResourceIdentifierObject> data) {

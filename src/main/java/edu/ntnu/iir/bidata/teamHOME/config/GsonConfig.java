@@ -5,9 +5,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToMany;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
 import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -40,6 +44,22 @@ public class GsonConfig {
     }
   }
 
+  private class RelationshipObjectAdapter implements JsonDeserializer<RelationshipObject> {
+    @Override
+    public RelationshipObject deserialize(JsonElement json, Type typeOfT,
+        JsonDeserializationContext context) {
+      JsonObject object = json.getAsJsonObject();
+      JsonElement data = object.get("data");
+      if (data.isJsonArray()) {
+        return context.deserialize(object, RelationshipObjectToMany.class);
+      } else if (data.isJsonObject()) {
+        return context.deserialize(object, RelationshipObjectToOne.class);
+      } else {
+        throw new IllegalArgumentException("Invalid relationship object");
+      }
+    }
+  }
+
   /**
    * Gson bean. Used for JSON serialization.
    *
@@ -50,6 +70,7 @@ public class GsonConfig {
     return new GsonBuilder()
         .setPrettyPrinting()
         .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+        .registerTypeAdapter(RelationshipObject.class, new RelationshipObjectAdapter())
         .create();
   }
 

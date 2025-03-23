@@ -1,6 +1,9 @@
 package edu.ntnu.iir.bidata.teamhome.controller;
 
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.ResidentsResource;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelResident;
 import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
@@ -14,7 +17,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.net.URI;
 import java.sql.SQLException;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -22,11 +27,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /** Controller for the resident endpoints. */
-@Tag(name = "Task", description = "The Task API")
+@Tag(name = "Resident", description = "The Resident API")
 @RestController
 public class ResidentsController {
   private static final Logger logger = LoggerFactory.getLogger(ResidentsController.class);
@@ -56,20 +61,26 @@ public class ResidentsController {
             description = "Internal server error",
             content = @Content),
       })
-  @PostMapping("/api/homes/{homeID}/residents")
+  @PostMapping("/api/homes/{homeId}/residents")
   public ResponseEntity<TopLevelResident> createResident(
       @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody
           TopLevelResident req,
       @Parameter(description = "The ID of the home to create residents in") @PathVariable
           String homeId,
-      @RequestHeader String host) {
+      UriComponentsBuilder uriBuilder) {
     try {
       Resident resident =
           MysqlService.getInstance()
               .createResident(EntityResourceMapper.fromResource(req.getData(), homeId));
-      return ResponseEntity.status(HttpStatus.CREATED)
-          .header("Location", String.format("https://%s/api/homes/%s", host, resident.getId()))
-          .body(new TopLevelResident(new ResidentsResource(resident, null)));
+      Map<String, RelationshipObject> relationships =
+          Map.of(
+              "home",
+              new RelationshipObjectToOne(
+                  new ResourceIdentifierObject("homes", resident.getHomeId())));
+      URI location =
+          uriBuilder.path("/api/residents/{id}").buildAndExpand(resident.getId()).toUri();
+      return ResponseEntity.created(location)
+          .body(new TopLevelResident(new ResidentsResource(resident, relationships)));
     } catch (DbForeignKeyViolationException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     } catch (SQLException e) {
