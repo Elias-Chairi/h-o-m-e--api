@@ -22,6 +22,8 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -398,6 +400,74 @@ public class MysqlService {
           recurrence.getIntervalDays(),
           recurrence.getStartDate(),
           recurrence.getEndDate());
+    }
+  }
+
+  public static final Map<String, Class<?>> TASK_FIELDS = Map.of(
+      "name", String.class,
+      "description", String.class,
+      "assignedTo", Integer.class,
+      "due", LocalDate.class,
+      "done", Boolean.class);
+
+  /**
+   * Updates a task in the database.
+   * The task is identified by the taskId.
+   * The updates are provided as a map where the key is the field to update and
+   * the value is the new value. Task fields that can be updated are defined in 
+   * {@link MysqlService#TASK_FIELDS}.
+   *
+   * @param updates The updates to apply to the task.
+   * @param taskId The ID of the task to update.
+   * @throws IllegalArgumentException if the updates are invalid.
+   * @throws DbEntityNotFoundException if the task is not found.
+   * @throws SQLException if an error occurs while updating the task.
+   */
+  public void updateTask(Map<String, Object> updates, int taskId) throws SQLException {
+    try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+      if (updates == null || updates.isEmpty()) {
+        throw new IllegalArgumentException("No updates provided");
+      }
+      updates.forEach((key, value) -> {
+        if (!TASK_FIELDS.keySet().contains(key)) {
+          throw new IllegalArgumentException("Invalid field: " + key);
+        }
+      });
+
+      StringBuilder query = new StringBuilder("UPDATE Task SET ");
+      for (Entry<String, Object> update : updates.entrySet()) {
+        if (update.getValue() == null) {
+          throw new IllegalArgumentException("Value for " + update.getKey() + " is null");
+        }
+        if (!TASK_FIELDS.get(update.getKey()).isInstance(update.getValue())) {
+          throw new IllegalArgumentException("Invalid type for " + update.getKey());
+        }
+        query.append(update.getKey()).append(" = ?, ");
+      }
+
+      query.delete(query.length() - 2, query.length()); // remove last comma
+      query.append(" WHERE task_id = ?");
+
+      try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
+        int i = 1;
+        for (Object value : updates.values()) {
+          if (value instanceof String) {
+            statement.setString(i, (String) value);
+          } else if (value instanceof Integer) {
+            statement.setInt(i, (Integer) value);
+          } else if (value instanceof LocalDate) {
+            statement.setDate(i, Date.valueOf((LocalDate) value));
+          } else if (value instanceof Boolean) {
+            statement.setBoolean(i, (Boolean) value);
+          }
+          i++;
+        }
+        statement.setInt(i, taskId);
+        int effectedRows = statement.executeUpdate();
+        if (effectedRows == 0) {
+          throw new DbEntityNotFoundException("Task not found");
+        }
+      }
     }
   }
 

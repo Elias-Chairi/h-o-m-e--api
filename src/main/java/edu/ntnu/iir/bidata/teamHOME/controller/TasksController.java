@@ -7,6 +7,7 @@ import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelRecurrence;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelTask;
 import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
+import edu.ntnu.iir.bidata.teamhome.service.exception.DbEntityNotFoundException;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbForeignKeyViolationException;
 import edu.ntnu.iir.bidata.teamhome.util.EntityResourceMapper;
 import edu.ntnu.iir.bidata.teamhome.util.exception.BadResourceException;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -134,10 +136,49 @@ public class TasksController {
       URI location = uriBuilder.path("/api/tasks/{id}").buildAndExpand(recurrence.getId()).toUri();
       return ResponseEntity.created(location).body(new TopLevelRecurrence(resource));
     } catch (DbForeignKeyViolationException e) {
-      return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+      return ResponseEntity.unprocessableEntity().build();
     } catch (SQLException e) {
       logger.error("Failed to create recurrence", e);
-      return ResponseEntity.status(500).build();
+      return ResponseEntity.internalServerError().build();
+    }
+  }
+
+  /**
+   * Update a task.
+   *
+   * @param req The request object containing the task details.
+   * @param taskId The ID of the task to update.
+   * @return 204 NO CONTENT if the task was updated, 400 BAD REQUEST if the request is invalid, 404
+   *     NOT FOUND if the task does not exist, 500 INTERNAL SERVER ERROR if an error occurred.
+   */
+  @Operation(summary = "Update a task", description = "Update a task")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "204", description = "Task updated"),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Task not found", content = @Content),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content),
+      })
+  @PatchMapping("/api/tasks/{taskId}")
+  public ResponseEntity<Void> updateTask(
+      @io.swagger.v3.oas.annotations.parameters.RequestBody @RequestBody TopLevelTask req,
+      @Parameter(description = "The ID of the task to update") @PathVariable int taskId,
+      UriComponentsBuilder uriBuilder) {
+    try {
+      MysqlService.getInstance()
+          .updateTask(EntityResourceMapper.fromResource(req.getData()), taskId);
+      URI location = uriBuilder.path("/api/tasks/{id}").buildAndExpand(taskId).toUri();
+      return ResponseEntity.noContent().location(location).build();
+    } catch (IllegalArgumentException | BadResourceException e) {
+      return ResponseEntity.badRequest().build();
+    } catch (DbEntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (SQLException e) {
+      logger.error("Failed to update task", e);
+      return ResponseEntity.internalServerError().build();
     }
   }
 }

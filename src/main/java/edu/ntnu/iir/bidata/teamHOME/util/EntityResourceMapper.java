@@ -46,6 +46,56 @@ public class EntityResourceMapper {
   }
 
   /**
+   * Maps a Task to a Map containing the task's attributes as key-value pairs.
+   *
+   * @param tasksResource The entity object to map.
+   * @return The mapped Map object.
+   * @throws BadResourceException If the resource object is invalid.
+   */
+  public static Map<String, Object> fromResource(TasksResource tasksResource)
+      throws BadResourceException {
+    TasksAttributes att = tasksResource.getAttributes();
+    Map<String, Object> map = new HashMap<>();
+    if (att.getName() != null) {
+      map.put("name", att.getName());
+    }
+    if (att.getDescription() != null) {
+      map.put("description", att.getDescription());
+    }
+    if (att.getDue() != null) {
+      map.put("due", att.getDue());
+    }
+    if (att.isDone() != null) {
+      map.put("done", att.isDone());
+    }
+
+    Map<String, RelationshipObject> relationships = tasksResource.getRelationships();
+    if (relationships == null) {
+      return map;
+    }
+
+    try {
+      for (Entry<String, RelationshipObject> entry : relationships.entrySet()) {
+        switch (entry.getKey()) {
+          case "assignedTo":
+            ResourceIdentifierObject assignedTo = ((RelationshipObjectToOne) entry.getValue())
+                .getData();
+            if (!assignedTo.getType().equals("residents")) {
+              throw new BadResourceException("Invalid relationship type found in resource object");
+            }
+            map.put("assignedTo", Integer.parseInt(assignedTo.getId()));
+            break;
+          default:
+            throw new BadResourceException("Invalid relationship name found in resource object");
+        }
+      }
+    } catch (ClassCastException | NullPointerException e) {
+      throw new BadResourceException("Invalid relationship object found in resource object");
+    }
+    return map;
+  }
+
+  /**
    * Maps a TasksResource to a Task.
    *
    * @param tasksResource The resource object to map.
@@ -91,7 +141,7 @@ public class EntityResourceMapper {
             throw new BadResourceException("Invalid relationship name found in resource object");
         }
       }
-    } catch (Exception e) {
+    } catch (ClassCastException | NullPointerException e) {
       throw new BadResourceException("Invalid relationship object found in resource object");
     }
 

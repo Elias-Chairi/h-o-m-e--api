@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -84,7 +83,7 @@ public class HomesController {
           .body(new TopLevelHome(new HomesResource(home, null)));
     } catch (SQLException e) {
       logger.error("Failed to create home", e);
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+      return ResponseEntity.internalServerError().build();
     }
   }
 
@@ -152,7 +151,7 @@ public class HomesController {
               relationships.put("residents", new RelationshipObjectToMany(residentIdentifers));
               break;
             default:
-              return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+              return ResponseEntity.badRequest().build();
           }
         }
       }
@@ -168,10 +167,10 @@ public class HomesController {
       HomesResource homeResource = new HomesResource(home, relationships);
       return ResponseEntity.ok(new CompoundDocumentHome(homeResource, included));
     } catch (DbEntityNotFoundException e) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+      return ResponseEntity.notFound().build();
     } catch (SQLException e) {
       logger.error("Failed to get tasks", e);
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+      return ResponseEntity.internalServerError().build();
     }
   }
 }

@@ -12,15 +12,15 @@ public class Task {
   private Integer assignedTo;
   private LocalDate due;
   private LocalDate created;
-  private int createdBy;
-  private boolean done;
+  private Integer createdBy;
+  private Boolean done;
   private Integer recurrenceId;
 
   /**
    * Creates a new task.
    */
   public Task(int id, String name, String description, Integer assignedTo, LocalDate due,
-      LocalDate created, int createdBy, boolean done, Integer recurrenceId) {
+      LocalDate created, Integer createdBy, Boolean done, Integer recurrenceId) {
     this.id = id;
     this.name = name;
     this.description = description;
@@ -36,7 +36,7 @@ public class Task {
    * Creates a new task.
    */
   public Task(String name, String description, Integer assignedTo, LocalDate due,
-      LocalDate created, int createdBy, boolean done, Integer recurrenceId) {
+      LocalDate created, Integer createdBy, boolean done, Integer recurrenceId) {
     this.name = name;
     this.description = description;
     this.assignedTo = assignedTo;
@@ -56,15 +56,15 @@ public class Task {
     private Integer assignedTo;
     private LocalDate due;
     private LocalDate created;
-    private int createdBy;
-    private boolean done;
+    private Integer createdBy;
+    private Boolean done;
     private Integer recurrenceId;
 
     /**
      * Creates a new task builder.
      */
-    public Builder(String name, String description, LocalDate due,
-        int createdBy, boolean done) {
+    public Builder(String name, String description, LocalDate due, Integer createdBy,
+        Boolean done) {
       this.name = name;
       this.description = description;
       this.due = due;
@@ -111,11 +111,11 @@ public class Task {
     return created;
   }
 
-  public int getCreatedBy() {
+  public Integer getCreatedBy() {
     return createdBy;
   }
 
-  public boolean isDone() {
+  public Boolean isDone() {
     return done;
   }
 

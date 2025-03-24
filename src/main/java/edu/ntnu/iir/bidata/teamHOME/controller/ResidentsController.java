@@ -22,7 +22,6 @@ import java.sql.SQLException;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -82,10 +81,10 @@ public class ResidentsController {
       return ResponseEntity.created(location)
           .body(new TopLevelResident(new ResidentsResource(resident, relationships)));
     } catch (DbForeignKeyViolationException e) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+      return ResponseEntity.notFound().build();
     } catch (SQLException e) {
       logger.error("Failed to create resident", e);
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+      return ResponseEntity.internalServerError().build();
     }
   }
 }

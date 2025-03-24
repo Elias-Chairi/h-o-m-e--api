@@ -28,13 +28,13 @@ public class TasksResource extends ResourceObject<TasksResource.TasksAttributes>
 
     LocalDate due;
     LocalDate created;
-    private boolean done;
+    private Boolean done;
 
     /**
      * Creates a new task attributes.
      */
     public TasksAttributes(String name, String description, LocalDate due, LocalDate created,
-        boolean done) {
+        Boolean done) {
       this.name = name;
       this.description = description;
       this.due = due;
@@ -58,7 +58,7 @@ public class TasksResource extends ResourceObject<TasksResource.TasksAttributes>
       return created;
     }
 
-    public boolean isDone() {
+    public Boolean isDone() {
       return done;
     }
   }
@@ -74,11 +74,11 @@ public class TasksResource extends ResourceObject<TasksResource.TasksAttributes>
   public TasksResource(Task task, Map<String, RelationshipObject> relationships) {
     this(Integer.toString(task.getId()),
         new TasksAttributes(
-          task.getName(),
-          task.getDescription(),
-          task.getDue(),
-          task.getCreated(),
-          task.isDone()),
+            task.getName(),
+            task.getDescription(),
+            task.getDue(),
+            task.getCreated(),
+            task.isDone()),
         relationships);
   }
 
