@@ -1,7 +1,10 @@
 package edu.ntnu.iir.bidata.teamhome.controller;
 
+import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
+import edu.ntnu.iir.bidata.teamhome.response.resourceobject.RecurrenceResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
+import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelRecurrence;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelTask;
 import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbForeignKeyViolationException;
@@ -81,6 +84,59 @@ public class TasksController {
       return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
     } catch (SQLException e) {
       logger.error("Failed to create task", e);
+      return ResponseEntity.status(500).build();
+    }
+  }
+
+  /**
+   * Create a recurrence.
+   *
+   * @param req The request object containing the recurrence details.
+   * @param taskId The ID of the task to create the recurrence for.
+   * @return 201 CREATED if the recurrence was created, 400 BAD REQUEST if the request is invalid,
+   *     422 UNPROCESSABLE ENTITY if the request is invalid, 500 INTERNAL SERVER ERROR if an error
+   *     occurred.
+   */
+  @Operation(summary = "Create a recurrence", description = "Create a recurrence")
+  @ApiResponses(
+      value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Recurrence created",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = TopLevelRecurrence.class))),
+        @ApiResponse(responseCode = "400", description = "Bad request", content = @Content),
+        @ApiResponse(
+            responseCode = "422",
+            description = "Unprocessable entity (for any id that does not exist)",
+            content = @Content),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content),
+      })
+  @PostMapping("/api/tasks/{taskId}/recurrence")
+  public ResponseEntity<TopLevelRecurrence> createRecurrence(
+      @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody
+          TopLevelRecurrence req,
+      @Parameter(description = "The ID of the task to create the recurrence for") @PathVariable
+          int taskId,
+      UriComponentsBuilder uriBuilder) {
+    try {
+
+      Recurrence recurrence =
+          MysqlService.getInstance()
+              .createRecurrence(EntityResourceMapper.fromResource(req.getData()), taskId);
+
+      RecurrenceResource resource = EntityResourceMapper.fromEntity(recurrence, taskId);
+      URI location = uriBuilder.path("/api/tasks/{id}").buildAndExpand(recurrence.getId()).toUri();
+      return ResponseEntity.created(location).body(new TopLevelRecurrence(resource));
+    } catch (DbForeignKeyViolationException e) {
+      return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+    } catch (SQLException e) {
+      logger.error("Failed to create recurrence", e);
       return ResponseEntity.status(500).build();
     }
   }

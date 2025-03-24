@@ -2,6 +2,7 @@ package edu.ntnu.iir.bidata.teamhome.service;
 
 import edu.ntnu.iir.bidata.teamhome.controller.HomesController;
 import edu.ntnu.iir.bidata.teamhome.enity.Home;
+import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbEntityNotFoundException;
@@ -323,6 +324,80 @@ public class MysqlService {
           throw new DbEntityNotFoundException("Task not found after creation");
         }
       }
+    }
+  }
+
+  /**
+   * Deletes a recurrence from the database.
+   *
+   * @param recurrenceId The ID of the recurrence to delete.
+   * @return true if the recurrence was deleted, false otherwise.
+   * @throws SQLException               if an error occurs while getting the task.
+   */
+  public boolean deleteRecurrence(int recurrenceId) throws SQLException {
+    try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+      final String query = "DELETE FROM Recurrence WHERE recurrence_id = ?";
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setInt(1, recurrenceId);
+        int effectedRows = statement.executeUpdate();
+        return effectedRows > 0;
+      }
+    }
+  }
+
+  /**
+   * Creates a recurrence in the database.
+   * The recurrence is associated with a task.
+   * The task is updated with the recurrence_id.
+   *
+   * @param recurrence The recurrence to create.
+   * @return The created recurrence.
+   * @throws DbEntityNotFoundException if the task is not found.
+   * @throws SQLException if an error occurs while creating the recurrence.
+   */
+  public Recurrence createRecurrence(Recurrence recurrence, int taskId) throws SQLException {
+    try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+      final String query = "INSERT INTO Recurrence "
+          + "(interval_days, start_date, end_date) VALUES (?, ?, ?)";
+      int recurrenceId;
+      try (PreparedStatement statement = connection.prepareStatement(query,
+          Statement.RETURN_GENERATED_KEYS)) {
+        statement.setInt(1, recurrence.getIntervalDays());
+        statement.setDate(2, Date.valueOf(recurrence.getStartDate()));
+        if (recurrence.getEndDate() == null) {
+          statement.setNull(3, java.sql.Types.DATE);
+        } else {
+          statement.setDate(3, Date.valueOf(recurrence.getEndDate()));
+        }
+        statement.executeUpdate();
+
+        try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+          if (generatedKeys.next()) {
+            recurrenceId = generatedKeys.getInt(1);
+          } else {
+            throw new SQLException("Failed to insert task.");
+          }
+        }
+      }
+
+      final String query2 = "UPDATE Task SET recurrence_id = ? WHERE task_id = ?";
+      try (PreparedStatement statement = connection.prepareStatement(query2)) {
+        statement.setInt(1, recurrenceId);
+        statement.setInt(2, taskId);
+        int effectedRows = statement.executeUpdate();
+        if (effectedRows == 0) {
+          deleteRecurrence(recurrenceId); // cleanup
+          throw new DbEntityNotFoundException("Task not found");
+        }
+      } catch (SQLIntegrityConstraintViolationException e) {
+        throw new DbForeignKeyViolationException("Task not found");
+      }
+
+      return new Recurrence(
+          recurrenceId,
+          recurrence.getIntervalDays(),
+          recurrence.getStartDate(),
+          recurrence.getEndDate());
     }
   }
 

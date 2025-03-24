@@ -4,6 +4,9 @@ import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -17,8 +20,14 @@ public class RecurrenceResource extends ResourceObject<RecurrenceResource.Recurr
    * Represents the attributes of a recurrence resource.
    */
   public static class RecurrenceAttributes {
+
+    @Min(1)
+    @Max(365)
     private int intervalDays;
+
+    @NotNull
     private LocalDate startDate;
+
     private LocalDate endDate;
 
     /**

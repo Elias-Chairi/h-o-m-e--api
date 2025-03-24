@@ -1,12 +1,14 @@
 package edu.ntnu.iir.bidata.teamhome.util;
 
 import edu.ntnu.iir.bidata.teamhome.enity.Home;
+import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.HomesResource;
+import edu.ntnu.iir.bidata.teamhome.response.resourceobject.RecurrenceResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.ResidentsResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource.TasksAttributes;
@@ -97,6 +99,20 @@ public class EntityResourceMapper {
   }
 
   /**
+   * Maps a RecurrenceResource to a Recurrence.
+   *
+   * @param recurrenceResource The resource object to map.
+   * @return The mapped Recurrence object.
+   */
+  public static Recurrence fromResource(RecurrenceResource recurrenceResource) {
+    RecurrenceResource.RecurrenceAttributes att = recurrenceResource.getAttributes();
+    return new Recurrence(
+        att.getIntervalDays(),
+        att.getStartDate(),
+        att.getEndDate());
+  }
+
+  /**
    * Maps a Task to a TasksResource.
    *
    * @param task The entity object to map.
@@ -123,5 +139,22 @@ public class EntityResourceMapper {
                   "recurrences", Integer.toString(task.getRecurrenceId()))));
     }
     return new TasksResource(task, relationships);
+  }
+
+  /**
+   * Maps a Recurrence to a RecurrenceResource.
+   *
+   * @param recurrence The entity object to map.
+   * @param taskId The ID of the task the recurrence belongs to.
+   * @return The mapped RecurrenceResource object.
+   */
+  public static RecurrenceResource fromEntity(Recurrence recurrence, int taskId) {
+    Map<String, RelationshipObject> relationships = Map.of(
+        "task",
+        new RelationshipObjectToOne(
+            new ResourceIdentifierObject(
+                "tasks", Integer.toString(taskId))));
+
+    return new RecurrenceResource(recurrence, relationships);
   }
 }
