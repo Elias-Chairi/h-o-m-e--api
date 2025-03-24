@@ -51,13 +51,10 @@ This is an API implemented in Java using Spring Boot. It provides both RESTful a
 ## API Endpoints
 
 ### REST Endpoints
-
-- `POST /api/home` - Create home with user
-- `GET /api/home/{homeID}` - Check if homeID is a home
-- `POST /api/home/{homeID}` - Create user in home
-- `GET /api/home/{homeID}/{userID}` - Get tasks
-- `POST /api/task/{userID}` - Create task
-- `PUT /api/task/{userID}` - Update task
+- `POST /api/homes` - Create home
+- `GET /api/homes/{homeId}` - Get home
+- `POST /api/homes/{homeId}/residents` - Create a resident in home
+- `POST /api/residents/{residentId}/tasks` - Create a task with resident as creator
 
 ### WebSocket Endpoints
 
