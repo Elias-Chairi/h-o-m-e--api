@@ -348,6 +348,38 @@ public class MysqlService {
   }
 
   /**
+   * Deletes the recurrence of a task.
+   * The recurrence is deleted from the database.
+   * The task is updated to set the recurrence_id to null.
+   *
+   * @param taskId The ID of the task to delete the recurrence for.
+   * @return true if the recurrence was deleted, false otherwise.
+   * @throws DbEntityNotFoundException if the task is not found.
+   * @throws SQLException               if an error occurs while deleting the
+   *                                    recurrence.
+   */
+  public boolean deleteTaskRecurrence(int taskId) throws SQLException {
+    try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+      final String query = "SELECT recurrence_id FROM Task WHERE task_id = ?";
+      int recurrenceId;
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setInt(1, taskId);
+        try (ResultSet resultSet = statement.executeQuery()) {
+          if (resultSet.next()) {
+            recurrenceId = resultSet.getInt(1);
+            if (resultSet.wasNull()) {
+              return false; // no recurrence
+            }
+          } else {
+            throw new DbEntityNotFoundException("Task not found");
+          }
+        }
+      }
+      return deleteRecurrence(recurrenceId);
+    }
+  }
+
+  /**
    * Creates a recurrence in the database.
    * The recurrence is associated with a task.
    * The task is updated with the recurrence_id.

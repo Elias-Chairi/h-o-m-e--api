@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -91,7 +92,7 @@ public class TasksController {
   }
 
   /**
-   * Create a recurrence.
+   * Create a recurrence for a task.
    *
    * @param req The request object containing the recurrence details.
    * @param taskId The ID of the task to create the recurrence for.
@@ -119,7 +120,7 @@ public class TasksController {
             description = "Internal server error",
             content = @Content),
       })
-  @PostMapping("/api/tasks/{taskId}/recurrence")
+  @PostMapping("/api/tasks/{taskId}/relationships/recurrence")
   public ResponseEntity<TopLevelRecurrence> createRecurrence(
       @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody
           TopLevelRecurrence req,
@@ -178,6 +179,38 @@ public class TasksController {
       return ResponseEntity.notFound().build();
     } catch (SQLException e) {
       logger.error("Failed to update task", e);
+      return ResponseEntity.internalServerError().build();
+    }
+  }
+
+  /**
+   * Delete the recurrence of a task.
+   *
+   * @param taskId The ID of the task to delete the recurrence for.
+   * @return 204 NO CONTENT if the recurrence was deleted, 404 NOT FOUND if the task does not exist,
+   *     500 INTERNAL SERVER ERROR if an error occurred.
+   */
+  @Operation(summary = "Delete the recurrence of a task", description = "Delete the recurrence")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "204", description = "Recurrence deleted"),
+        @ApiResponse(responseCode = "404", description = "Task not found", content = @Content),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content),
+      })
+  @DeleteMapping("/api/tasks/{taskId}/relationships/recurrence")
+  public ResponseEntity<Void> deleteRecurrence(
+      @Parameter(description = "The ID of the task to delete the recurrence for") @PathVariable
+          int taskId) {
+    try {
+      MysqlService.getInstance().deleteTaskRecurrence(taskId);
+      return ResponseEntity.noContent().build();
+    } catch (DbEntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (SQLException e) {
+      logger.error("Failed to delete recurrence", e);
       return ResponseEntity.internalServerError().build();
     }
   }
