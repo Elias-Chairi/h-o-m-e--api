@@ -161,21 +161,4 @@ public class EntityResourceMapper {
         att.getStartDate(),
         att.getEndDate());
   }
-
-  /**
-   * Maps a Recurrence to a RecurrenceResource.
-   *
-   * @param recurrence The entity object to map.
-   * @param taskId The ID of the task the recurrence belongs to.
-   * @return The mapped RecurrenceResource object.
-   */
-  public static RecurrenceResource fromEntity(Recurrence recurrence, int taskId) {
-    Map<String, RelationshipObject> relationships = Map.of(
-        "task",
-        new RelationshipObjectToOne(
-            new ResourceIdentifierObject(
-                "tasks", Integer.toString(taskId))));
-
-    return new RecurrenceResource(recurrence, relationships);
-  }
 }

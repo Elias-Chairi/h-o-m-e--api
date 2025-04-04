@@ -58,16 +58,16 @@ public class RecurrenceResource extends ResourceObject<RecurrenceResource.Recurr
   }
 
   /**
-   * Creates a new user resource.
+   * Creates a new recurrence resource from a recurrence entity.
    */
-  public RecurrenceResource(Recurrence recurrence, Map<String, RelationshipObject> relationships) {
-    this(
+  public static RecurrenceResource fromEntity(Recurrence recurrence) {
+    return new RecurrenceResource(
         Integer.toString(recurrence.getId()),
         new RecurrenceAttributes(
-          recurrence.getIntervalDays(), 
-          recurrence.getStartDate(), 
-          recurrence.getEndDate()),
-        relationships);
+            recurrence.getIntervalDays(),
+            recurrence.getStartDate(),
+            recurrence.getEndDate()),
+        null);
   }
 
   @Schema(example = type)

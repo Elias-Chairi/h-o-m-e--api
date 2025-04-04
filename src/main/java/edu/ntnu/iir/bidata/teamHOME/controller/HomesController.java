@@ -1,6 +1,7 @@
 package edu.ntnu.iir.bidata.teamhome.controller;
 
 import edu.ntnu.iir.bidata.teamhome.enity.Home;
+import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
@@ -8,6 +9,7 @@ import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToMany;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceObject;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.HomesResource;
+import edu.ntnu.iir.bidata.teamhome.response.resourceobject.RecurrenceResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.ResidentsResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.CompoundDocumentHome;
@@ -77,10 +79,8 @@ public class HomesController {
     try {
       Home home =
           MysqlService.getInstance().createHome(EntityResourceMapper.fromResource(req.getData()));
-      URI location =
-          uriBuilder.path("/api/homes/{id}").buildAndExpand(home.getId()).toUri();
-      return ResponseEntity.created(location)
-          .body(new TopLevelHome(new HomesResource(home, null)));
+      URI location = uriBuilder.path("/api/homes/{id}").buildAndExpand(home.getId()).toUri();
+      return ResponseEntity.created(location).body(new TopLevelHome(new HomesResource(home, null)));
     } catch (SQLException e) {
       logger.error("Failed to create home", e);
       return ResponseEntity.internalServerError().build();
@@ -125,34 +125,43 @@ public class HomesController {
       Map<String, RelationshipObject> relationships = new HashMap<>();
       List<ResourceObject<?>> included = new ArrayList<>();
       if (include != null) {
-        String[] includedResources = include.split(",");
-        for (String includedResource : includedResources) {
-          switch (includedResource) {
-            case "tasks":
-              List<Task> tasks = mysqlService.getTasks(homeId);
-              List<ResourceIdentifierObject> taskIdentifers = new ArrayList<>();
-              for (Task task : tasks) {
-                taskIdentifers.add(
-                    new ResourceIdentifierObject("tasks", Integer.toString(task.getId())));
-                included.add(TasksResource.fromEntity(task));
-              }
-              relationships.put("tasks", new RelationshipObjectToMany(taskIdentifers));
-              break;
-            case "residents":
-              if (residents == null) {
-                residents = mysqlService.getResidents(homeId);
-              }
-              List<ResourceIdentifierObject> residentIdentifers = new ArrayList<>();
-              for (Resident resident : residents) {
-                residentIdentifers.add(
-                    new ResourceIdentifierObject("residents", Integer.toString(resident.getId())));
-                included.add(ResidentsResource.fromEntity(resident));
-              }
-              relationships.put("residents", new RelationshipObjectToMany(residentIdentifers));
-              break;
-            default:
-              return ResponseEntity.badRequest().build();
+        List<String> includedResources = List.of(include.split(","));
+        if (includedResources.contains("tasks")
+            || includedResources.contains("tasks.recurrences")) {
+          List<Task> tasks = mysqlService.getTasks(homeId);
+          List<ResourceIdentifierObject> taskIdentifers = new ArrayList<>();
+          for (Task task : tasks) {
+            taskIdentifers.add(
+                new ResourceIdentifierObject("tasks", Integer.toString(task.getId())));
+            included.add(TasksResource.fromEntity(task));
           }
+          relationships.put("tasks", new RelationshipObjectToMany(taskIdentifers));
+
+          if (includedResources.contains("tasks.recurrences")) {
+            List<Integer> tasksWithRecurrence =
+                tasks.stream()
+                    .filter(task -> task.getRecurrenceId() != null)
+                    .map(task -> task.getRecurrenceId())
+                    .toList();
+            List<Recurrence> recurrences = mysqlService.getRecurrences(tasksWithRecurrence);
+            List<ResourceObject<?>> recurrenceResources = new ArrayList<>();
+            for (Recurrence recurrence : recurrences) {
+              recurrenceResources.add(RecurrenceResource.fromEntity(recurrence));
+            }
+            included.addAll(recurrenceResources);
+          }
+        }
+        if (includedResources.contains("residents")) {
+          if (residents == null) {
+            residents = mysqlService.getResidents(homeId);
+          }
+          List<ResourceIdentifierObject> residentIdentifers = new ArrayList<>();
+          for (Resident resident : residents) {
+            residentIdentifers.add(
+                new ResourceIdentifierObject("residents", Integer.toString(resident.getId())));
+            included.add(ResidentsResource.fromEntity(resident));
+          }
+          relationships.put("residents", new RelationshipObjectToMany(residentIdentifers));
         }
       }
 

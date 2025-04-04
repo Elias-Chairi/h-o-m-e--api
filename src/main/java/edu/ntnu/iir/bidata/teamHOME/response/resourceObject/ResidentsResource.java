@@ -39,7 +39,7 @@ public class ResidentsResource extends ResourceObject<ResidentsResource.Resident
   }
 
   /**
-   * Creates a new user resource.
+   * Creates a new user resource from a resident entity.
    */
   public static ResidentsResource fromEntity(Resident resident) {
     Map<String, RelationshipObject> relationships = Map.of(

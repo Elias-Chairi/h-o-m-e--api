@@ -358,6 +358,48 @@ public class MysqlService {
   }
 
   /**
+   * Gets the recurrences from the database.
+   *
+   * @param ids The IDs of the recurrences to get.
+   * @return A list of recurrences.
+   * @throws SQLException if an error occurs while getting the recurrences.
+   */
+  public List<Recurrence> getRecurrences(List<Integer> ids) throws SQLException {
+    if (ids == null || ids.isEmpty()) {
+      return List.of();
+    }
+    try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+      final String query = String.format("SELECT recurrence_id, interval_days, start_date, "
+          + "end_date FROM Recurrence WHERE recurrence_id IN (%s)",
+          String.join(", ", ids.stream().map(id -> Integer.toString(id)).toList()));
+
+      System.out.println("QUERY");
+      System.out.println(query);
+
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
+        try (ResultSet resultSet = statement.executeQuery()) {
+          List<Recurrence> recurrences = new ArrayList<>();
+          while (resultSet.next()) {
+            recurrences.add(new Recurrence(
+                resultSet.getInt(1),
+                resultSet.getInt(2),
+                resultSet.getDate(3).toLocalDate(),
+                resultSet.getDate(4) == null ? null : resultSet.getDate(4).toLocalDate()));
+          }
+          return recurrences;
+        }
+      }
+
+      // final String query = "DELETE FROM Recurrence WHERE recurrence_id = ?";
+      // try (PreparedStatement statement = connection.prepareStatement(query)) {
+      //   statement.setInt(1, recurrenceId);
+      //   int effectedRows = statement.executeUpdate();
+      //   return effectedRows > 0;
+      // }
+    }
+  }
+
+  /**
    * Deletes the recurrence of a task.
    * The recurrence is deleted from the database.
    * The task is updated to set the recurrence_id to null.
