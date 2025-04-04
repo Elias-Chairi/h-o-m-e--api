@@ -2,11 +2,14 @@ package edu.ntnu.iir.bidata.teamhome.response.resourceobject;
 
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -69,10 +72,26 @@ public class TasksResource extends ResourceObject<TasksResource.TasksAttributes>
   }
 
   /**
-   * Creates a new task resource.
+   * Creates a new task resource object from a task entity.
    */
-  public TasksResource(Task task, Map<String, RelationshipObject> relationships) {
-    this(Integer.toString(task.getId()),
+  public static TasksResource fromEntity(Task task) {
+    Map<String, RelationshipObject> relationships = new HashMap<>(Map.of(
+        "createdBy",
+        new RelationshipObjectToOne(new ResourceIdentifierObject("residents",
+            Integer.toString(task.getCreatedBy())))));
+
+    if (task.getAssignedTo() != null) {
+      relationships.put("assignedTo",
+          new RelationshipObjectToOne(new ResourceIdentifierObject("residents",
+              Integer.toString(task.getAssignedTo()))));
+    }
+    if (task.getRecurrenceId() != null) {
+      relationships.put("recurrence",
+          new RelationshipObjectToOne(new ResourceIdentifierObject("recurrences",
+              Integer.toString(task.getRecurrenceId()))));
+    }
+
+    return new TasksResource(Integer.toString(task.getId()),
         new TasksAttributes(
             task.getName(),
             task.getDescription(),

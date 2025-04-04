@@ -1,9 +1,6 @@
 package edu.ntnu.iir.bidata.teamhome.controller;
 
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
-import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
-import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
-import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.ResidentsResource;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelResident;
 import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
@@ -19,7 +16,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.sql.SQLException;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -71,15 +67,10 @@ public class ResidentsController {
       Resident resident =
           MysqlService.getInstance()
               .createResident(EntityResourceMapper.fromResource(req.getData(), homeId));
-      Map<String, RelationshipObject> relationships =
-          Map.of(
-              "home",
-              new RelationshipObjectToOne(
-                  new ResourceIdentifierObject("homes", resident.getHomeId())));
       URI location =
           uriBuilder.path("/api/residents/{id}").buildAndExpand(resident.getId()).toUri();
       return ResponseEntity.created(location)
-          .body(new TopLevelResident(new ResidentsResource(resident, relationships)));
+          .body(new TopLevelResident(ResidentsResource.fromEntity(resident)));
     } catch (DbForeignKeyViolationException e) {
       return ResponseEntity.notFound().build();
     } catch (SQLException e) {

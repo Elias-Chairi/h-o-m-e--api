@@ -2,6 +2,8 @@ package edu.ntnu.iir.bidata.teamhome.response.resourceobject;
 
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
+import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -39,8 +41,13 @@ public class ResidentsResource extends ResourceObject<ResidentsResource.Resident
   /**
    * Creates a new user resource.
    */
-  public ResidentsResource(Resident resident, Map<String, RelationshipObject> relationships) {
-    this(
+  public static ResidentsResource fromEntity(Resident resident) {
+    Map<String, RelationshipObject> relationships = Map.of(
+        "home",
+        new RelationshipObjectToOne(
+            new ResourceIdentifierObject("homes", resident.getHomeId())));
+
+    return new ResidentsResource(
         Integer.toString(resident.getId()),
         new ResidentsAttributes(resident.getName()),
         relationships);

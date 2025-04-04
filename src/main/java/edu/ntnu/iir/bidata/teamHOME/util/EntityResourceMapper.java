@@ -163,35 +163,6 @@ public class EntityResourceMapper {
   }
 
   /**
-   * Maps a Task to a TasksResource.
-   *
-   * @param task The entity object to map.
-   * @return The mapped TasksResource object.
-   */
-  public static TasksResource fromEntity(Task task) {
-    Map<String, RelationshipObject> relationships = new HashMap<>();
-    relationships.put("createdBy",
-        new RelationshipObjectToOne(
-            new ResourceIdentifierObject(
-                "residents", Integer.toString(task.getCreatedBy()))));
-
-    if (task.getAssignedTo() != null) {
-      relationships.put(
-          "assignedTo",
-          new RelationshipObjectToOne(
-              new ResourceIdentifierObject("residents", Integer.toString(task.getAssignedTo()))));
-    }
-    if (task.getRecurrenceId() != null) {
-      relationships.put(
-          "recurrence",
-          new RelationshipObjectToOne(
-              new ResourceIdentifierObject(
-                  "recurrences", Integer.toString(task.getRecurrenceId()))));
-    }
-    return new TasksResource(task, relationships);
-  }
-
-  /**
    * Maps a Recurrence to a RecurrenceResource.
    *
    * @param recurrence The entity object to map.

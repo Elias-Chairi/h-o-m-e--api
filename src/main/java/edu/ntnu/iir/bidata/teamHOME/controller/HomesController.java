@@ -134,7 +134,7 @@ public class HomesController {
               for (Task task : tasks) {
                 taskIdentifers.add(
                     new ResourceIdentifierObject("tasks", Integer.toString(task.getId())));
-                included.add(new TasksResource(task, null));
+                included.add(TasksResource.fromEntity(task));
               }
               relationships.put("tasks", new RelationshipObjectToMany(taskIdentifers));
               break;
@@ -146,7 +146,7 @@ public class HomesController {
               for (Resident resident : residents) {
                 residentIdentifers.add(
                     new ResourceIdentifierObject("residents", Integer.toString(resident.getId())));
-                included.add(new ResidentsResource(resident, null));
+                included.add(ResidentsResource.fromEntity(resident));
               }
               relationships.put("residents", new RelationshipObjectToMany(residentIdentifers));
               break;

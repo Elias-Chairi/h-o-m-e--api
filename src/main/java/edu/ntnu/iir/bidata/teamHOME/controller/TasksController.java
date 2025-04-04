@@ -78,7 +78,7 @@ public class TasksController {
       Task task =
           MysqlService.getInstance()
               .createTask(EntityResourceMapper.fromResource(req.getData(), residentId));
-      TasksResource resource = EntityResourceMapper.fromEntity(task);
+      TasksResource resource = TasksResource.fromEntity(task);
       URI location = uriBuilder.path("/api/tasks/{id}").buildAndExpand(task.getId()).toUri();
       return ResponseEntity.created(location).body(new TopLevelTask(resource));
     } catch (BadResourceException e) {
