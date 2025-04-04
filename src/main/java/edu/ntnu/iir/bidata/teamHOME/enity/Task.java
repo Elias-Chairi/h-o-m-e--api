@@ -36,7 +36,7 @@ public class Task {
    * Creates a new task.
    */
   public Task(String name, String description, Integer assignedTo, LocalDate due,
-      LocalDate created, Integer createdBy, boolean done, Integer recurrenceId) {
+      LocalDate created, Integer createdBy, Boolean done, Integer recurrenceId) {
     this.name = name;
     this.description = description;
     this.assignedTo = assignedTo;

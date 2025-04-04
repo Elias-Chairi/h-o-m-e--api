@@ -21,6 +21,7 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -253,9 +254,16 @@ public class MysqlService {
    */
   public Task createTask(Task task) throws SQLException {
     try (Connection connection = DriverManager.getConnection(this.connectionString)) {
-      final String taskQuery = "INSERT INTO Task "
-          + "(name, description, assignedTo, due, createdBy, done, recurrence_id)"
-          + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+      List<String> columns = new ArrayList<>(
+          List.of("name", "description", "assignedTo", "due", "createdBy", "recurrence_id"));
+      if (task.isDone() != null) {
+        columns.add("done");
+      }
+      List<String> values = Collections.nCopies(columns.size(), "?");
+      final String taskQuery = String.format("INSERT INTO Task (%s) VALUES (%s)",
+          String.join(", ", columns), String.join(", ", values));
+
       int taskId;
       try (PreparedStatement statement = connection.prepareStatement(taskQuery,
           Statement.RETURN_GENERATED_KEYS)) {
@@ -272,11 +280,13 @@ public class MysqlService {
           statement.setDate(4, java.sql.Date.valueOf(task.getDue()));
         }
         statement.setInt(5, task.getCreatedBy());
-        statement.setBoolean(6, task.isDone());
         if (task.getRecurrenceId() == null) {
-          statement.setNull(7, java.sql.Types.INTEGER);
+          statement.setNull(6, java.sql.Types.INTEGER);
         } else {
-          statement.setInt(7, task.getRecurrenceId());
+          statement.setInt(6, task.getRecurrenceId());
+        }
+        if (task.isDone() != null) {
+          statement.setBoolean(7, task.isDone());
         }
         statement.executeUpdate();
 
