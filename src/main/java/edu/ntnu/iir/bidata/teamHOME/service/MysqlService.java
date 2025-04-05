@@ -574,6 +574,26 @@ public class MysqlService {
   }
 
   /**
+   * Deletes a task from the database.
+   *
+   * @param taskId The ID of the task to delete.
+   * @throws DbEntityNotFoundException if the task is not found.
+   * @throws SQLException if an error occurs while deleting the task.
+   */
+  public void deleteTask(int taskId) throws SQLException {
+    try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+      final String query = "DELETE FROM Task WHERE task_id = ?";
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setInt(1, taskId);
+        int effectedRows = statement.executeUpdate();
+        if (effectedRows == 0) {
+          throw new DbEntityNotFoundException("Task not found");
+        }
+      }
+    }
+  }
+
+  /**
    * Returns the instance of the MysqlController.
    *
    * @return the instance of the MysqlController

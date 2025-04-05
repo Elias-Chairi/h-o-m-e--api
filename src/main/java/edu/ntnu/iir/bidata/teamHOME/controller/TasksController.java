@@ -2,7 +2,6 @@ package edu.ntnu.iir.bidata.teamhome.controller;
 
 import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
-import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.RecurrenceResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelRecurrence;
@@ -26,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -179,6 +179,37 @@ public class TasksController {
       return ResponseEntity.notFound().build();
     } catch (SQLException e) {
       logger.error("Failed to update task", e);
+      return ResponseEntity.internalServerError().build();
+    }
+  }
+
+  /**
+   * Delete a task.
+   *
+   * @param taskId The ID of the task to delete.
+   * @return 204 NO CONTENT if the task was deleted, 404 NOT FOUND if the task does not exist, 500
+   *     INTERNAL SERVER ERROR if an error occurred.
+   */
+  @Operation(summary = "Delete a task", description = "Delete a task")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "204", description = "Task deleted"),
+        @ApiResponse(responseCode = "404", description = "Task not found", content = @Content),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content),
+      })
+  @DeleteMapping("/api/tasks/{taskId}")
+  public ResponseEntity<Void> deleteTask(
+      @Parameter(description = "The ID of the task to delete") @PathVariable int taskId) {
+    try {
+      MysqlService.getInstance().deleteTask(taskId);
+      return ResponseEntity.noContent().build();
+    } catch (DbEntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (SQLException e) {
+      logger.error("Failed to delete task", e);
       return ResponseEntity.internalServerError().build();
     }
   }
