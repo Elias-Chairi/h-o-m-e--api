@@ -3,6 +3,7 @@ package edu.ntnu.iir.bidata.teamhome.response.resourceobject;
 import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceObject;
+import io.micrometer.common.lang.NonNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -14,6 +15,7 @@ import java.util.Map;
  * Represents a recurrence resource.
  */
 public class RecurrenceResource extends ResourceObject<RecurrenceResource.RecurrenceAttributes> {
+  @NonNull
   private static final String type = "recurrences";
 
   /**

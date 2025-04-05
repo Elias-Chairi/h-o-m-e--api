@@ -12,6 +12,7 @@ import edu.ntnu.iir.bidata.teamhome.response.resourceobject.RecurrenceResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.ResidentsResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource.TasksAttributes;
+import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
 import edu.ntnu.iir.bidata.teamhome.util.exception.BadResourceException;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,6 +52,8 @@ public class EntityResourceMapper {
    * @param tasksResource The entity object to map.
    * @return The mapped Map object.
    * @throws BadResourceException If the resource object is invalid.
+   * @see MysqlService#UPDATABLE_TASK_FIELDS
+   * @see MysqlService#NULLABLE_TASK_FIELDS
    */
   public static Map<String, Object> fromResource(TasksResource tasksResource)
       throws BadResourceException {
@@ -80,10 +83,23 @@ public class EntityResourceMapper {
           case "assignedTo":
             ResourceIdentifierObject assignedTo = ((RelationshipObjectToOne) entry.getValue())
                 .getData();
-            if (!assignedTo.getType().equals("residents")) {
+            if (assignedTo == null) {
+              map.put("assignedTo", null);
+            } else if (!assignedTo.getType().equals("residents")) {
               throw new BadResourceException("Invalid relationship type found in resource object");
+            } else {
+              map.put("assignedTo", Integer.parseInt(assignedTo.getId()));
             }
-            map.put("assignedTo", Integer.parseInt(assignedTo.getId()));
+
+            break;
+          case "recurrence":
+            ResourceIdentifierObject recurrence = ((RelationshipObjectToOne) entry.getValue())
+                .getData();
+            if (recurrence == null) {
+              map.put("recurrence_id", null);
+            } else {
+              throw new BadResourceException("Does not support updating recurrence");
+            }
             break;
           default:
             throw new BadResourceException("Invalid relationship name found in resource object");

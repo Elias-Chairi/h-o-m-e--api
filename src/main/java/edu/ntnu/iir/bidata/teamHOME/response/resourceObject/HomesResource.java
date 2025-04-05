@@ -3,6 +3,7 @@ package edu.ntnu.iir.bidata.teamhome.response.resourceobject;
 import edu.ntnu.iir.bidata.teamhome.enity.Home;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceObject;
+import io.micrometer.common.lang.NonNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -12,6 +13,7 @@ import java.util.Map;
  * Represents a home resource.
  */
 public class HomesResource extends ResourceObject<HomesResource.HomesAttributes> {
+  @NonNull
   private static final String type = "homes";
 
   /**

@@ -487,19 +487,26 @@ public class MysqlService {
     }
   }
 
-  public static final Map<String, Class<?>> TASK_FIELDS = Map.of(
+  public static final Map<String, Class<?>> UPDATABLE_TASK_FIELDS = Map.of(
       "name", String.class,
       "description", String.class,
       "assignedTo", Integer.class,
       "due", LocalDate.class,
       "done", Boolean.class);
 
+  public static final Map<String, Class<?>> NULLABLE_TASK_FIELDS = Map.of(
+      "description", String.class,
+      "assignedTo", Integer.class,
+      "due", LocalDate.class,
+      "recurrence_id", Integer.class);
+
   /**
    * Updates a task in the database.
    * The task is identified by the taskId.
    * The updates are provided as a map where the key is the field to update and
    * the value is the new value. Task fields that can be updated are defined in 
-   * {@link MysqlService#TASK_FIELDS}.
+   * {@link MysqlService#UPDATABLE_TASK_FIELDS} and nullable fields are defined in
+   * {@link MysqlService#NULLABLE_TASK_FIELDS}.
    *
    * @param updates The updates to apply to the task.
    * @param taskId The ID of the task to update.
@@ -513,19 +520,19 @@ public class MysqlService {
         throw new IllegalArgumentException("No updates provided");
       }
       updates.forEach((key, value) -> {
-        if (!TASK_FIELDS.keySet().contains(key)) {
+        if (value == null) {
+          if (!NULLABLE_TASK_FIELDS.containsKey(key)) {
+            throw new IllegalArgumentException("Field " + key + " cannot be null");
+          }
+        } else if (!UPDATABLE_TASK_FIELDS.containsKey(key)) {
           throw new IllegalArgumentException("Invalid field: " + key);
+        } else if (!UPDATABLE_TASK_FIELDS.get(key).isInstance(value)) {
+          throw new IllegalArgumentException("Invalid type for field " + key);
         }
       });
 
       StringBuilder query = new StringBuilder("UPDATE Task SET ");
       for (Entry<String, Object> update : updates.entrySet()) {
-        if (update.getValue() == null) {
-          throw new IllegalArgumentException("Value for " + update.getKey() + " is null");
-        }
-        if (!TASK_FIELDS.get(update.getKey()).isInstance(update.getValue())) {
-          throw new IllegalArgumentException("Invalid type for " + update.getKey());
-        }
         query.append(update.getKey()).append(" = ?, ");
       }
 
@@ -534,15 +541,26 @@ public class MysqlService {
 
       try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
         int i = 1;
-        for (Object value : updates.values()) {
-          if (value instanceof String) {
-            statement.setString(i, (String) value);
-          } else if (value instanceof Integer) {
-            statement.setInt(i, (Integer) value);
-          } else if (value instanceof LocalDate) {
-            statement.setDate(i, Date.valueOf((LocalDate) value));
-          } else if (value instanceof Boolean) {
-            statement.setBoolean(i, (Boolean) value);
+        for (Entry<String, Object> entry : updates.entrySet()) {
+          if (entry.getValue() == null) {
+            if (NULLABLE_TASK_FIELDS.get(entry.getKey()) == Integer.class) {
+              statement.setNull(i, java.sql.Types.INTEGER);
+            } else if (NULLABLE_TASK_FIELDS.get(entry.getKey()) == String.class) {
+              statement.setNull(i, java.sql.Types.LONGNVARCHAR);
+            } else if (NULLABLE_TASK_FIELDS.get(entry.getKey()) == LocalDate.class) {
+              statement.setNull(i, java.sql.Types.DATE);
+            } else {
+              throw new IllegalArgumentException("failed to set null value in DB for field "
+                  + entry.getKey());
+            }
+          } else if (entry.getValue() instanceof String) {
+            statement.setString(i, (String) entry.getValue());
+          } else if (entry.getValue() instanceof Integer) {
+            statement.setInt(i, (Integer) entry.getValue());
+          } else if (entry.getValue() instanceof LocalDate) {
+            statement.setDate(i, Date.valueOf((LocalDate) entry.getValue()));
+          } else if (entry.getValue() instanceof Boolean) {
+            statement.setBoolean(i, (Boolean) entry.getValue());
           }
           i++;
         }

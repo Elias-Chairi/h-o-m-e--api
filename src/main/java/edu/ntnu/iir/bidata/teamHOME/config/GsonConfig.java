@@ -50,7 +50,9 @@ public class GsonConfig {
         JsonDeserializationContext context) {
       JsonObject object = json.getAsJsonObject();
       JsonElement data = object.get("data");
-      if (data.isJsonArray()) {
+      if (data.isJsonNull()) {
+        return new RelationshipObjectToOne(null);
+      } else if (data.isJsonArray()) {
         return context.deserialize(object, RelationshipObjectToMany.class);
       } else if (data.isJsonObject()) {
         return context.deserialize(object, RelationshipObjectToOne.class);

@@ -5,6 +5,7 @@ import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceObject;
+import io.micrometer.common.lang.NonNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -16,6 +17,7 @@ import java.util.Map;
  * Represents a user resource.
  */
 public class TasksResource extends ResourceObject<TasksResource.TasksAttributes> {
+  @NonNull
   private static final String type = "tasks";
 
   /**
