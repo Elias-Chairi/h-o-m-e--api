@@ -114,7 +114,9 @@ public class HomesController {
   @GetMapping("/api/homes/{homeId}")
   public ResponseEntity<CompoundDocumentHome> getHome(
       @Parameter(description = "The ID of the home to get") @PathVariable String homeId,
-      @Parameter(description = "The resources to include in the response (residents,tasks)")
+      @Parameter(
+              description =
+                  "The resources to include in the response (residents,tasks,tasks.recurrences)")
           @RequestParam(required = false)
           String include) {
     try {

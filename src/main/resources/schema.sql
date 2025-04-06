@@ -31,3 +31,26 @@ CREATE TABLE IF NOT EXISTS Task (
     FOREIGN KEY (createdBy) REFERENCES Resident(resident_id) ON DELETE CASCADE,
     FOREIGN KEY (recurrence_id) REFERENCES Recurrence(recurrence_id) ON DELETE SET NULL
 );
+
+DELIMITER //
+
+CREATE TRIGGER IF NOT EXISTS delete_recurrence_when_unlinked
+AFTER UPDATE ON Task
+FOR EACH ROW
+BEGIN
+    IF OLD.recurrence_id IS NOT NULL AND NEW.recurrence_id IS NULL THEN
+        DELETE FROM Recurrence WHERE recurrence_id = OLD.recurrence_id;
+    END IF;
+END;
+//
+
+CREATE TRIGGER IF NOT EXISTS delete_recurrence_on_task_delete
+AFTER DELETE ON Task
+FOR EACH ROW
+BEGIN
+    DELETE FROM Recurrence
+    WHERE recurrence_id = OLD.recurrence_id;
+END;
+//
+
+DELIMITER ;

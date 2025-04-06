@@ -36,14 +36,27 @@ This is an API implemented in Java using Spring Boot. It provides both RESTful a
    cd h-o-m-e--api
    ```
 
-2. Set the environment variable `AZURE_MYSQL_CONNECTIONSTRING`:
+2. Create the MySQL Server
+
+   Note that the API uses MySQL triggers to manage data integrity. To ensure proper trigger functionality, the following are required:
+
+   1. **MySQL Variable**: Set the `log_bin_trust_function_creators` variable to `1`:
+
+   ```mysql
+   SET GLOBAL log_bin_trust_function_creators = 1;
+   ```
+
+   2. **User Permissions**: The MySQL user must have the `CREATE TRIGGER` permission along with the basic: `CREATE`, `INSERT`, `SELECT`, `UPDATE`, `DELETE` and `REFERENCES`.
+
+3. Set the environment variable `AZURE_MYSQL_CONNECTIONSTRING`:
 
    ```bash
    export AZURE_MYSQL_CONNECTIONSTRING='jdbc:mysql://localhost:3306/DATABASE?serverTimezone=UTC&sslmode=required&user=USERNAME&password=PASSWORD'
    ```
 
-3. Build and run the application:
-   ```sh
+4. Build and run the application:
+
+   ```bash
    mvn clean install
    mvn spring-boot:run
    ```
@@ -51,6 +64,7 @@ This is an API implemented in Java using Spring Boot. It provides both RESTful a
 ## API Endpoints
 
 ### REST Endpoints
+
 - `POST /api/homes` - Create home
 - `GET /api/homes/{homeId}` - Get home
 - `POST /api/homes/{homeId}/residents` - Create a resident in home

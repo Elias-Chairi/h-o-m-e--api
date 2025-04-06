@@ -57,10 +57,33 @@ public class MysqlService {
         text.append(line + System.lineSeparator());
       }
 
-      List<String> queries = Stream.of(text.toString().split(";"))
+      List<String> queries = new ArrayList<>();
+      final String delimeterMarker = "DELIMITER";
+      final String defaultDelimiter = ";";
+      String[] schemaParts = text.toString().split(delimeterMarker);
+
+      if (schemaParts.length == 0) {
+        throw new IOException("No schema found");
+      }
+
+      // parse first part with default delimiter
+      queries.addAll(Stream.of(schemaParts[0].split(defaultDelimiter))
           .filter(q -> !q.isBlank())
-          .map(q -> q.trim() + ";")
-          .toList();
+          .map(q -> q.trim() + defaultDelimiter)
+          .toList());
+
+      // parse other parts if DELIMITER is found
+      for (int i = 1; i < schemaParts.length; i++) {
+        String part = schemaParts[i];
+        final String delimiter = part.substring(0, part.indexOf(System.lineSeparator())).trim();
+        String partSchema = part.substring(
+            part.indexOf(System.lineSeparator()) + System.lineSeparator().length());
+
+        queries.addAll(Stream.of(partSchema.split(delimiter))
+            .filter(q -> !q.isBlank())
+            .map(q -> q.trim() + (delimiter.equals(defaultDelimiter) ? defaultDelimiter : ""))
+            .toList());
+      }
 
       return queries;
     }
@@ -79,8 +102,8 @@ public class MysqlService {
       try {
         queries = getQueriesFromResourceSchema("/schema.sql");
       } catch (IOException e) {
-        e.printStackTrace();
-        return;
+        logger.error("Failed to read schema file", e);
+        throw new SQLException("Failed to read schema file", e);
       }
 
       logger.debug("Creating tables in MySQL database");
