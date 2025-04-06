@@ -19,22 +19,20 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.GsonHttpMessageConverter;
 
-/**
- * Configuration class for Gson.
- */
+/** Configuration class for Gson. */
 @Configuration
 public class GsonConfig {
 
   /**
-   * Custom adapter for serializing and deserializing LocalDate objects.
-   * Formats LocalDate objects as "yyyy-mm-dd".
+   * Custom adapter for serializing and deserializing LocalDate objects. Formats LocalDate objects
+   * as "yyyy-mm-dd".
    */
   private class LocalDateAdapter implements JsonDeserializer<LocalDate>, JsonSerializer<LocalDate> {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
 
     @Override
-    public LocalDate deserialize(JsonElement json, Type typeOfT,
-        JsonDeserializationContext context) {
+    public LocalDate deserialize(
+        JsonElement json, Type typeOfT, JsonDeserializationContext context) {
       return LocalDate.parse(json.getAsString(), formatter);
     }
 
@@ -44,10 +42,14 @@ public class GsonConfig {
     }
   }
 
+  /**
+   * Custom adapter for serializing and deserializing RelationshipObject objects. Handles
+   * {@link RelationshipObjectToOne} and {@link RelationshipObjectToMany} types.
+   */
   private class RelationshipObjectAdapter implements JsonDeserializer<RelationshipObject> {
     @Override
-    public RelationshipObject deserialize(JsonElement json, Type typeOfT,
-        JsonDeserializationContext context) {
+    public RelationshipObject deserialize(
+        JsonElement json, Type typeOfT, JsonDeserializationContext context) {
       JsonObject object = json.getAsJsonObject();
       JsonElement data = object.get("data");
       if (data.isJsonNull()) {
@@ -73,12 +75,12 @@ public class GsonConfig {
         .setPrettyPrinting()
         .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
         .registerTypeAdapter(RelationshipObject.class, new RelationshipObjectAdapter())
+        .registerTypeAdapterFactory(new NullableOptionalTypeAdapterFactory())
         .create();
   }
 
   /**
-   * GsonHttpMessageConverter bean. Ensures that Gson is used for JSON
-   * serialization.
+   * GsonHttpMessageConverter bean. Ensures that Gson is used for JSON serialization.
    *
    * @param gson Gson bean
    * @return GsonHttpMessageConverter bean

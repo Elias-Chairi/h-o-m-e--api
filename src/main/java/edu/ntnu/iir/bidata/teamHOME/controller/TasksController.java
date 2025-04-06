@@ -2,10 +2,12 @@ package edu.ntnu.iir.bidata.teamhome.controller;
 
 import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
+import edu.ntnu.iir.bidata.teamhome.response.attributesobject.TasksAttributes;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.RecurrenceResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelRecurrence;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelTask;
+import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelTaskUpdate;
 import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbEntityNotFoundException;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbForeignKeyViolationException;
@@ -78,7 +80,7 @@ public class TasksController {
       Task task =
           MysqlService.getInstance()
               .createTask(EntityResourceMapper.fromResource(req.getData(), residentId));
-      TasksResource resource = TasksResource.fromEntity(task);
+      TasksResource<TasksAttributes> resource = TasksResource.fromEntity(task);
       URI location = uriBuilder.path("/api/tasks/{id}").buildAndExpand(task.getId()).toUri();
       return ResponseEntity.created(location).body(new TopLevelTask(resource));
     } catch (BadResourceException e) {
@@ -167,7 +169,8 @@ public class TasksController {
       })
   @PatchMapping("/api/tasks/{taskId}")
   public ResponseEntity<Void> updateTask(
-      @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody TopLevelTask req,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody
+          TopLevelTaskUpdate req,
       @Parameter(description = "The ID of the task to update") @PathVariable int taskId,
       UriComponentsBuilder uriBuilder) {
     try {

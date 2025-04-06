@@ -4,6 +4,8 @@ import edu.ntnu.iir.bidata.teamhome.enity.Home;
 import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
+import edu.ntnu.iir.bidata.teamhome.response.attributesobject.TasksAttributes;
+import edu.ntnu.iir.bidata.teamhome.response.attributesobject.TasksUpdateAttributes;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
@@ -11,7 +13,6 @@ import edu.ntnu.iir.bidata.teamhome.response.resourceobject.HomesResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.RecurrenceResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.ResidentsResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
-import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource.TasksAttributes;
 import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
 import edu.ntnu.iir.bidata.teamhome.util.exception.BadResourceException;
 import java.util.HashMap;
@@ -55,22 +56,26 @@ public class EntityResourceMapper {
    * @see MysqlService#UPDATABLE_TASK_FIELDS
    * @see MysqlService#NULLABLE_TASK_FIELDS
    */
-  public static Map<String, Object> fromResource(TasksResource tasksResource)
+  public static Map<String, Object> fromResource(TasksResource<TasksUpdateAttributes> tasksResource)
       throws BadResourceException {
-    TasksAttributes att = tasksResource.getAttributes();
+    TasksUpdateAttributes att = tasksResource.getAttributes();
     Map<String, Object> map = new HashMap<>();
-    if (att.getName() != null) {
-      map.put("name", att.getName());
+    if (att == null) {
+      throw new BadResourceException("Invalid attributes object found in resource object");
     }
-    if (att.getDescription() != null) {
-      map.put("description", att.getDescription());
-    }
-    if (att.getDue() != null) {
-      map.put("due", att.getDue());
-    }
-    if (att.isDone() != null) {
-      map.put("done", att.isDone());
-    }
+
+    att.getName().ifPresent(name -> {
+      map.put("name", name);
+    });
+    att.getDescription().ifPresent(description -> {
+      map.put("description", description);
+    });
+    att.getDue().ifPresent(due -> {
+      map.put("due", due);
+    });
+    att.isDone().ifPresent(done -> {
+      map.put("done", done);
+    });
 
     Map<String, RelationshipObject> relationships = tasksResource.getRelationships();
     if (relationships == null) {
@@ -119,7 +124,7 @@ public class EntityResourceMapper {
    * @return The mapped Task object.
    * @throws BadResourceException If the resource object is invalid.
    */
-  public static Task fromResource(TasksResource tasksResource, int residentId)
+  public static Task fromResource(TasksResource<TasksAttributes> tasksResource, int residentId)
       throws BadResourceException {
     TasksAttributes att = tasksResource.getAttributes();
     Task.Builder taskBuilder = new Task.Builder(
