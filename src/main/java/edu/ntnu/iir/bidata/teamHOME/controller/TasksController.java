@@ -136,6 +136,8 @@ public class TasksController {
       RecurrenceResource resource = RecurrenceResource.fromEntity(recurrence);
       URI location = uriBuilder.path("/api/tasks/{id}").buildAndExpand(recurrence.getId()).toUri();
       return ResponseEntity.created(location).body(new TopLevelRecurrence(resource));
+    } catch (DbEntityNotFoundException e) {
+      return ResponseEntity.notFound().build();
     } catch (DbForeignKeyViolationException e) {
       return ResponseEntity.unprocessableEntity().build();
     } catch (SQLException e) {
