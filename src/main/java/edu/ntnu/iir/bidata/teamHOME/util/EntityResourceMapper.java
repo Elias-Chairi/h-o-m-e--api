@@ -111,7 +111,7 @@ public class EntityResourceMapper {
         }
       }
     } catch (ClassCastException | NullPointerException e) {
-      throw new BadResourceException("Invalid relationship object found in resource object");
+      throw new BadResourceException("Invalid relationship object found in resource object", e);
     }
     return map;
   }
