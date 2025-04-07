@@ -65,10 +65,18 @@ This is an API implemented in Java using Spring Boot. It provides both RESTful a
 
 ### REST Endpoints
 
-- `POST /api/homes` - Create home
-- `GET /api/homes/{homeId}` - Get home
-- `POST /api/homes/{homeId}/residents` - Create a resident in home
-- `POST /api/residents/{residentId}/tasks` - Create a task with resident as creator
+#### Task
+- `POST /api/tasks/{taskId}/relationships/recurrence` Create a recurrence
+- `POST /api/residents/{residentId}/tasks` Create a task
+- `DELETE /api/tasks/{taskId}` Delete a task
+- `PATCH /api/tasks/{taskId}` Update a task
+
+#### Home
+- `POST /api/homes` Create a home
+- `GET /api/homes/{homeId}` Get home details
+
+#### Resident
+- `POST /api/homes/{homeId}/residents` Create a resident
 
 ### WebSocket Endpoints
 
