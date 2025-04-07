@@ -37,6 +37,39 @@ public class NullableOptional<T> {
   }
 
   /**
+   * Returns the value if present, otherwise throws an exception.
+   *
+   * @return the value
+   * @throws NullPointerException if no value is present
+   */
+  public T get() {
+    if (!present) {
+      throw new NullPointerException("No value present");
+    }
+    return value;
+  }
+
+  /**
+   * Returns {@code true} if there is no value present, otherwise {@code false}.
+   *
+   * @return {@code true} if there is no value present, otherwise {@code false}
+   * @see #isPresent()
+   */
+  public boolean isEmpty() {
+    return !present;
+  }
+
+  /**
+   * Returns {@code true} if there is a value present, otherwise {@code false}.
+   *
+   * @return {@code true} if there is a value present, otherwise {@code false}
+   * @see #isEmpty()
+   */
+  public boolean isPresent() {
+    return present;
+  }
+
+  /**
    * If a value is present, performs the given action with the value,
    * otherwise does nothing.
    *
@@ -48,28 +81,5 @@ public class NullableOptional<T> {
     if (present) {
       action.accept(value);
     }
-  }
-
-  /**
-   * If a value is present, performs the given action with the value,
-   * otherwise performs the given empty-based action.
-   *
-   * @param action the action to be performed, if a value is present
-   * @param emptyAction the action to be performed, if no value is present
-   * @throws NullPointerException if value is present and the given action is
-   *         {@code null}, or if no value is present and the given emptyAction
-   *         is {@code null}
-   */
-  public void ifPresentOrElse(Consumer<? super T> action, Runnable emptyAction) {
-    if (present) {
-      action.accept(value);
-    } else {
-      emptyAction.run();
-    }
-  }
-
-  @Override
-  public String toString() {
-    return present ? "NullableOptional[" + value + "]" : "NullableOptional.empty";
   }
 }

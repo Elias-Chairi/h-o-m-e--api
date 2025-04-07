@@ -1,7 +1,6 @@
 package edu.ntnu.iir.bidata.teamhome.config;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
@@ -47,26 +46,11 @@ public class NullableOptionalTypeAdapterFactory implements TypeAdapterFactory {
 
     @Override
     public void write(JsonWriter out, NullableOptional<T> optional) throws IOException {
-      if (optional == null) {
+      if (optional == null || optional.isEmpty()) {
         out.nullValue();
-        return;
+      } else {
+        valueAdapter.write(out, optional.get());
       }
-
-      optional.ifPresentOrElse(
-          value -> {
-            try {
-              valueAdapter.write(out, value);
-            } catch (IOException e) {
-              throw new JsonIOException(e);
-            }
-          },
-          () -> {
-            try {
-              out.nullValue();
-            } catch (IOException e) {
-              throw new JsonIOException(e);
-            }
-          });
     }
 
     @Override

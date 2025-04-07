@@ -5,6 +5,7 @@ import edu.ntnu.iir.bidata.teamhome.enity.Home;
 import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
+import edu.ntnu.iir.bidata.teamhome.entityupdate.TaskUpdate;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbEntityNotFoundException;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbForeignKeyViolationException;
 import java.io.BufferedReader;
@@ -23,8 +24,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -412,13 +411,6 @@ public class MysqlService {
           return recurrences;
         }
       }
-
-      // final String query = "DELETE FROM Recurrence WHERE recurrence_id = ?";
-      // try (PreparedStatement statement = connection.prepareStatement(query)) {
-      //   statement.setInt(1, recurrenceId);
-      //   int effectedRows = statement.executeUpdate();
-      //   return effectedRows > 0;
-      // }
     }
   }
 
@@ -510,53 +502,39 @@ public class MysqlService {
     }
   }
 
-  public static final Map<String, Class<?>> UPDATABLE_TASK_FIELDS = Map.of(
-      "name", String.class,
-      "description", String.class,
-      "assignedTo", Integer.class,
-      "due", LocalDate.class,
-      "done", Boolean.class);
-
-  public static final Map<String, Class<?>> NULLABLE_TASK_FIELDS = Map.of(
-      "description", String.class,
-      "assignedTo", Integer.class,
-      "due", LocalDate.class,
-      "recurrence_id", Integer.class);
-
   /**
    * Updates a task in the database.
-   * The task is identified by the taskId.
-   * The updates are provided as a map where the key is the field to update and
-   * the value is the new value. Task fields that can be updated are defined in 
-   * {@link MysqlService#UPDATABLE_TASK_FIELDS} and nullable fields are defined in
-   * {@link MysqlService#NULLABLE_TASK_FIELDS}.
    *
-   * @param updates The updates to apply to the task.
+   * @param update The task update to apply.
    * @param taskId The ID of the task to update.
-   * @throws IllegalArgumentException if the updates are invalid.
    * @throws DbEntityNotFoundException if the task is not found.
    * @throws SQLException if an error occurs while updating the task.
    */
-  public void updateTask(Map<String, Object> updates, int taskId) throws SQLException {
+  public void updateTask(TaskUpdate update, int taskId) throws SQLException {
     try (Connection connection = DriverManager.getConnection(this.connectionString)) {
-      if (updates == null || updates.isEmpty()) {
+      if (update == null || update.isEmpty()) {
         throw new IllegalArgumentException("No updates provided");
       }
-      updates.forEach((key, value) -> {
-        if (value == null) {
-          if (!NULLABLE_TASK_FIELDS.containsKey(key)) {
-            throw new IllegalArgumentException("Field " + key + " cannot be null");
-          }
-        } else if (!UPDATABLE_TASK_FIELDS.containsKey(key)) {
-          throw new IllegalArgumentException("Invalid field: " + key);
-        } else if (!UPDATABLE_TASK_FIELDS.get(key).isInstance(value)) {
-          throw new IllegalArgumentException("Invalid type for field " + key);
-        }
-      });
 
       StringBuilder query = new StringBuilder("UPDATE Task SET ");
-      for (Entry<String, Object> update : updates.entrySet()) {
-        query.append(update.getKey()).append(" = ?, ");
+
+      if (update.getName().isPresent()) {
+        query.append("name = ?, ");
+      }
+      if (update.getDescription().isPresent()) {
+        query.append("description = ?, ");
+      }
+      if (update.getAssignedTo().isPresent()) {
+        query.append("assignedTo = ?, ");
+      }
+      if (update.getDue().isPresent()) {
+        query.append("due = ?, ");
+      }
+      if (update.isDone().isPresent()) {
+        query.append("done = ?, ");
+      }
+      if (update.getRecurrenceId().isPresent()) {
+        query.append("recurrence_id = ?, ");
       }
 
       query.delete(query.length() - 2, query.length()); // remove last comma
@@ -564,29 +542,48 @@ public class MysqlService {
 
       try (PreparedStatement statement = connection.prepareStatement(query.toString())) {
         int i = 1;
-        for (Entry<String, Object> entry : updates.entrySet()) {
-          if (entry.getValue() == null) {
-            if (NULLABLE_TASK_FIELDS.get(entry.getKey()) == Integer.class) {
-              statement.setNull(i, java.sql.Types.INTEGER);
-            } else if (NULLABLE_TASK_FIELDS.get(entry.getKey()) == String.class) {
-              statement.setNull(i, java.sql.Types.LONGNVARCHAR);
-            } else if (NULLABLE_TASK_FIELDS.get(entry.getKey()) == LocalDate.class) {
-              statement.setNull(i, java.sql.Types.DATE);
-            } else {
-              throw new IllegalArgumentException("failed to set null value in DB for field "
-                  + entry.getKey());
-            }
-          } else if (entry.getValue() instanceof String) {
-            statement.setString(i, (String) entry.getValue());
-          } else if (entry.getValue() instanceof Integer) {
-            statement.setInt(i, (Integer) entry.getValue());
-          } else if (entry.getValue() instanceof LocalDate) {
-            statement.setDate(i, Date.valueOf((LocalDate) entry.getValue()));
-          } else if (entry.getValue() instanceof Boolean) {
-            statement.setBoolean(i, (Boolean) entry.getValue());
+
+        if (update.getName().isPresent()) {
+          statement.setString(i, update.getName().get());
+          i++;
+        }
+        if (update.getDescription().isPresent()) {
+          if (update.getDescription().get() == null) {
+            statement.setNull(i, java.sql.Types.LONGNVARCHAR);
+          } else {
+            statement.setString(i, update.getDescription().get());
           }
           i++;
         }
+        if (update.getAssignedTo().isPresent()) {
+          if (update.getAssignedTo().get() == null) {
+            statement.setNull(i, java.sql.Types.INTEGER);
+          } else {
+            statement.setInt(i, update.getAssignedTo().get());
+          }
+          i++;
+        }
+        if (update.getDue().isPresent()) {
+          if (update.getDue().get() == null) {
+            statement.setNull(i, java.sql.Types.DATE);
+          } else {
+            statement.setDate(i, Date.valueOf(update.getDue().get()));
+          }
+          i++;
+        }
+        if (update.isDone().isPresent()) {
+          statement.setBoolean(i, update.isDone().get());
+          i++;
+        }
+        if (update.getRecurrenceId().isPresent()) {
+          if (update.getRecurrenceId().get() == null) {
+            statement.setNull(i, java.sql.Types.INTEGER);
+          } else {
+            statement.setInt(i, update.getRecurrenceId().get());
+          }
+          i++;
+        }
+
         statement.setInt(i, taskId);
         int effectedRows = statement.executeUpdate();
         if (effectedRows == 0) {

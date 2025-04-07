@@ -4,6 +4,7 @@ import edu.ntnu.iir.bidata.teamhome.enity.Home;
 import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
+import edu.ntnu.iir.bidata.teamhome.entityupdate.TaskUpdate;
 import edu.ntnu.iir.bidata.teamhome.response.attributesobject.TasksAttributes;
 import edu.ntnu.iir.bidata.teamhome.response.attributesobject.TasksUpdateAttributes;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
@@ -13,9 +14,7 @@ import edu.ntnu.iir.bidata.teamhome.response.resourceobject.HomesResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.RecurrenceResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.ResidentsResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
-import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
 import edu.ntnu.iir.bidata.teamhome.util.exception.BadResourceException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -48,38 +47,42 @@ public class EntityResourceMapper {
   }
 
   /**
-   * Maps a Task to a Map containing the task's attributes as key-value pairs.
+   * Maps a TasksResource to a TaskUpdate.
    *
-   * @param tasksResource The entity object to map.
-   * @return The mapped Map object.
+   * @param tasksResource The resource object to map.
+   * @return The mapped TaskUpdate object.
    * @throws BadResourceException If the resource object is invalid.
-   * @see MysqlService#UPDATABLE_TASK_FIELDS
-   * @see MysqlService#NULLABLE_TASK_FIELDS
    */
-  public static Map<String, Object> fromResource(TasksResource<TasksUpdateAttributes> tasksResource)
+  public static TaskUpdate fromResource(TasksResource<TasksUpdateAttributes> tasksResource)
       throws BadResourceException {
     TasksUpdateAttributes att = tasksResource.getAttributes();
-    Map<String, Object> map = new HashMap<>();
     if (att == null) {
       throw new BadResourceException("Invalid attributes object found in resource object");
     }
 
-    att.getName().ifPresent(name -> {
-      map.put("name", name);
-    });
-    att.getDescription().ifPresent(description -> {
-      map.put("description", description);
-    });
-    att.getDue().ifPresent(due -> {
-      map.put("due", due);
-    });
-    att.isDone().ifPresent(done -> {
-      map.put("done", done);
-    });
+    TaskUpdate update = new TaskUpdate();
+
+    try {
+      att.getName().ifPresent(name -> {
+        update.setName(name);
+      });
+      att.getDescription().ifPresent(description -> {
+        update.setDescription(description);
+      });
+      att.getDue().ifPresent(due -> {
+        update.setDue(due);
+      });
+      att.isDone().ifPresent(done -> {
+        update.setDone(done);
+      });
+    } catch (NullPointerException e) {
+      throw new BadResourceException("Invalid attributes object found in resource object", e);
+    }
+
 
     Map<String, RelationshipObject> relationships = tasksResource.getRelationships();
     if (relationships == null) {
-      return map;
+      return update;
     }
 
     try {
@@ -89,11 +92,11 @@ public class EntityResourceMapper {
             ResourceIdentifierObject assignedTo = ((RelationshipObjectToOne) entry.getValue())
                 .getData();
             if (assignedTo == null) {
-              map.put("assignedTo", null);
+              update.setAssignedTo(null);
             } else if (!assignedTo.getType().equals("residents")) {
               throw new BadResourceException("Invalid relationship type found in resource object");
             } else {
-              map.put("assignedTo", Integer.parseInt(assignedTo.getId()));
+              update.setAssignedTo(Integer.parseInt(assignedTo.getId()));
             }
 
             break;
@@ -101,7 +104,7 @@ public class EntityResourceMapper {
             ResourceIdentifierObject recurrence = ((RelationshipObjectToOne) entry.getValue())
                 .getData();
             if (recurrence == null) {
-              map.put("recurrence_id", null);
+              update.setRecurrenceId(null);
             } else {
               throw new BadResourceException("Does not support updating recurrence");
             }
@@ -113,7 +116,7 @@ public class EntityResourceMapper {
     } catch (ClassCastException | NullPointerException e) {
       throw new BadResourceException("Invalid relationship object found in resource object", e);
     }
-    return map;
+    return update;
   }
 
   /**
