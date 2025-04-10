@@ -26,11 +26,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class NotificationService {
   private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
-  private SimpMessagingTemplate template;
+  private final SimpMessagingTemplate template;
+  private final MysqlService mysqlService;
+
 
   @Autowired
-  public NotificationService(SimpMessagingTemplate template) {
+  public NotificationService(SimpMessagingTemplate template, MysqlService mysqlService) {
     this.template = template;
+    this.mysqlService = mysqlService;
   }
 
   /**
@@ -56,7 +59,7 @@ public class NotificationService {
   private void notifyTask(int taskId, Action action, String clientId) {
     TaskInfo taskInfo;
     try {
-      taskInfo = MysqlService.getInstance().getTaskInfo(taskId);
+      taskInfo = mysqlService.getTaskInfo(taskId);
     } catch (SQLException e) {
       logger.error("Error while getting task info", e);
       return;
@@ -112,7 +115,7 @@ public class NotificationService {
   public void notifyRecurrenceCreation(int taskId, String clientId) {
     TaskInfo taskInfo;
     try {
-      taskInfo = MysqlService.getInstance().getTaskInfo(taskId);
+      taskInfo = mysqlService.getTaskInfo(taskId);
     } catch (SQLException e) {
       logger.error("Error while getting task info", e);
       return;

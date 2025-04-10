@@ -34,10 +34,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class ResidentsController {
   private static final Logger logger = LoggerFactory.getLogger(ResidentsController.class);
   private final NotificationService notificationService;
+  private final MysqlService mysqlService;
 
   @Autowired
-  public ResidentsController(NotificationService notificationService) {
+  public ResidentsController(NotificationService notificationService, MysqlService mysqlService) {
     this.notificationService = notificationService;
+    this.mysqlService = mysqlService;
   }
 
   /**
@@ -74,13 +76,12 @@ public class ResidentsController {
       @RequestHeader("X-Client-Id") String clientId,
       UriComponentsBuilder uriBuilder) {
     try {
-      Resident resident =
-          MysqlService.getInstance()
-              .createResident(EntityResourceMapper.fromResource(req.getData(), homeId));
+      Resident resident = 
+          mysqlService.createResident(EntityResourceMapper.fromResource(req.getData(), homeId));
       
       ResidentsResource residentResource = ResidentsResource.fromEntity(resident);
 
-      this.notificationService.notifyResidentCreation(homeId, residentResource);
+      this.notificationService.notifyResidentCreation(homeId, residentResource, clientId);
 
       URI location =
           uriBuilder.path("/api/residents/{id}").buildAndExpand(resident.getId()).toUri();

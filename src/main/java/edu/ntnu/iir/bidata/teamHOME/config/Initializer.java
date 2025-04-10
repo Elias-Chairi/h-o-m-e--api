@@ -4,6 +4,7 @@ import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
 import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
@@ -13,10 +14,14 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class Initializer implements SmartLifecycle {
-
   private static final Logger logger = LoggerFactory.getLogger(Initializer.class);
-
   private volatile boolean isRunning = false;
+  private final MysqlService mysqlService;
+
+  @Autowired
+  public Initializer(MysqlService mysqlService) {
+    this.mysqlService = mysqlService;
+  }
 
   /**
    * Starts the initialization process.
@@ -27,7 +32,7 @@ public class Initializer implements SmartLifecycle {
     // Initialize the MySQL database
     logger.info("Creating tables in MySQL database");
     try {
-      MysqlService.getInstance().createTables();
+      mysqlService.createTables();
     } catch (SQLException e) {
       throw new RuntimeException("Failed to initialize MySQL database", e);
     }

@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,6 +48,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RestController
 public class HomesController {
   private static final Logger logger = LoggerFactory.getLogger(HomesController.class);
+  private final MysqlService mysqlService;
+
+  @Autowired
+  public HomesController(MysqlService mysqlService) {
+    this.mysqlService = mysqlService;
+  }
 
   /**
    * Create a home.
@@ -76,8 +83,7 @@ public class HomesController {
       @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody TopLevelHome req,
       UriComponentsBuilder uriBuilder) {
     try {
-      Home home =
-          MysqlService.getInstance().createHome(EntityResourceMapper.fromResource(req.getData()));
+      Home home = mysqlService.createHome(EntityResourceMapper.fromResource(req.getData()));
       URI location = uriBuilder.path("/api/homes/{id}").buildAndExpand(home.getId()).toUri();
       return ResponseEntity.created(location).body(new TopLevelHome(new HomesResource(home, null)));
     } catch (SQLException e) {
@@ -119,7 +125,6 @@ public class HomesController {
           @RequestParam(required = false)
           String include) {
     try {
-      MysqlService mysqlService = MysqlService.getInstance();
       List<Resident> residents = null;
       final Home home = mysqlService.getHome(homeId);
 

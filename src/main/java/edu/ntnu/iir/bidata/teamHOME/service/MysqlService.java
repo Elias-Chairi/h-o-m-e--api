@@ -29,19 +29,17 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 /**
- * Controller for interacting with the MySQL database. Uses the Singleton
- * pattern.
+ * Controller for interacting with the MySQL database.
  */
+@Service
 public class MysqlService {
-
   private static final Logger logger = LoggerFactory.getLogger(HomesController.class);
-  private static MysqlService instance = null;
   private String connectionString;
 
-  private MysqlService() {
-    // private constructor
+  public MysqlService() {
     this.connectionString = System.getenv("AZURE_MYSQL_CONNECTIONSTRING");
   }
 
@@ -696,17 +694,4 @@ public class MysqlService {
       }
     }
   }
-
-  /**
-   * Returns the instance of the MysqlController.
-   *
-   * @return the instance of the MysqlController
-   */
-  public static MysqlService getInstance() {
-    if (MysqlService.instance == null) {
-      MysqlService.instance = new MysqlService();
-    }
-    return MysqlService.instance;
-  }
-
 }

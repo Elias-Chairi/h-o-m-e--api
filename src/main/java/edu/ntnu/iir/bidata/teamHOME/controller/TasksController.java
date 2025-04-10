@@ -46,10 +46,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class TasksController {
   private static final Logger logger = LoggerFactory.getLogger(HomesController.class);
   private final NotificationService notificationService;
+  private final MysqlService mysqlService;
 
   @Autowired
-  public TasksController(NotificationService notificationService) {
+  public TasksController(NotificationService notificationService, MysqlService mysqlService) {
     this.notificationService = notificationService;
+    this.mysqlService = mysqlService;
   }
 
   /**
@@ -89,8 +91,7 @@ public class TasksController {
       UriComponentsBuilder uriBuilder) {
     try {
       Task task =
-          MysqlService.getInstance()
-              .createTask(EntityResourceMapper.fromResource(req.getData(), residentId));
+          mysqlService.createTask(EntityResourceMapper.fromResource(req.getData(), residentId));
       TasksResource<TasksAttributes> resource = TasksResource.fromEntity(task);
 
       notificationService.notifyTaskCreation(Integer.parseInt(resource.getId()), clientId);
@@ -147,8 +148,7 @@ public class TasksController {
     try {
 
       Recurrence recurrence =
-          MysqlService.getInstance()
-              .createRecurrence(EntityResourceMapper.fromResource(req.getData()), taskId);
+          mysqlService.createRecurrence(EntityResourceMapper.fromResource(req.getData()), taskId);
 
       this.notificationService.notifyRecurrenceCreation(taskId, clientId);
 
@@ -193,7 +193,7 @@ public class TasksController {
       UriComponentsBuilder uriBuilder) {
     try {
       TaskUpdate update = EntityResourceMapper.fromResource(req.getData());
-      MysqlService.getInstance().updateTask(update, taskId);
+      mysqlService.updateTask(update, taskId);
 
       this.notificationService.notifyTaskUpdate(taskId, clientId);
 
@@ -231,8 +231,8 @@ public class TasksController {
       @Parameter(description = "The ID of the task to delete") @PathVariable int taskId,
       @RequestHeader("X-Client-Id") String clientId) {
     try {
-      TaskInfo taskInfo = MysqlService.getInstance().getTaskInfo(taskId);
-      MysqlService.getInstance().deleteTask(taskId);
+      TaskInfo taskInfo = mysqlService.getTaskInfo(taskId);
+      mysqlService.deleteTask(taskId);
 
       this.notificationService.notifyTaskRemoval(taskInfo.getHomeId(), taskId, clientId);
 
