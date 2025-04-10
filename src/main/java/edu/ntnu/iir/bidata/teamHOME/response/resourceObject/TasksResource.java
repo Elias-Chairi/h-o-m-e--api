@@ -18,7 +18,7 @@ public class TasksResource<T> extends ResourceObject<T> {
   @NonNull
   private static final String type = "tasks";
 
-  private TasksResource(String id, T attributes,
+  public TasksResource(String id, T attributes,
       Map<String, RelationshipObject> relationships) {
     super(id, type, attributes, relationships);
   }

@@ -6,6 +6,7 @@ import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
 import edu.ntnu.iir.bidata.teamhome.entityupdate.TaskUpdate;
+import edu.ntnu.iir.bidata.teamhome.entitywrapper.TaskInfo;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbEntityNotFoundException;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbForeignKeyViolationException;
 import java.io.BufferedReader;
@@ -609,6 +610,89 @@ public class MysqlService {
         if (effectedRows == 0) {
           throw new DbEntityNotFoundException("Task not found");
         }
+      }
+    }
+  }
+
+  /**
+   * Gets the task info from the database.
+   *
+   * @param taskId The ID of the task to get.
+   * @return The task info.
+   * @throws DbEntityNotFoundException if the task is not found.
+   * @throws SQLException if an error occurs while getting the task info.
+   */
+  public TaskInfo getTaskInfo(int taskId) throws SQLException {
+    try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+      final String query = """
+          SELECT
+              t.task_id,
+              t.name AS task_name,
+              t.description,
+              t.assignedTo,
+              t.due,
+              t.created,
+              t.createdBy,
+              t.done,
+              t.recurrence_id,
+              r.home_id,
+              rec.interval_days,
+              rec.start_date,
+              rec.end_date
+          FROM
+              Task t
+          JOIN
+              Resident r ON t.createdBy = r.resident_id
+          LEFT JOIN
+              Recurrence rec ON t.recurrence_id = rec.recurrence_id
+          WHERE
+              t.task_id = ?;""";
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setInt(1, taskId);
+        try (ResultSet resultSet = statement.executeQuery()) {
+          if (resultSet.next()) {
+            Date sqldue = resultSet.getDate(5);
+            LocalDate due = null;
+            if (sqldue != null) {
+              due = sqldue.toLocalDate();
+            }
+            Integer assignedTo = resultSet.getInt(4);
+            if (resultSet.wasNull()) {
+              assignedTo = null;
+            }
+            Integer recurrenceId = resultSet.getInt(9);
+            if (resultSet.wasNull()) {
+              recurrenceId = null;
+            }
+            Task task = new Task(
+                resultSet.getInt(1),
+                resultSet.getString(2),
+                resultSet.getString(3),
+                assignedTo,
+                due,
+                resultSet.getDate(6).toLocalDate(),
+                resultSet.getInt(7),
+                resultSet.getBoolean(8),
+                recurrenceId);
+            Recurrence recurrence = null;
+            if (recurrenceId != null) {
+              Date sqlEndDate = resultSet.getDate(13);
+              LocalDate endDate = null;
+              if (sqlEndDate != null) {
+                endDate = sqlEndDate.toLocalDate();
+              }
+              recurrence = new Recurrence(
+                  recurrenceId,
+                  resultSet.getInt(11),
+                  resultSet.getDate(12).toLocalDate(),
+                  endDate);
+            }
+            String homeId = resultSet.getString(10);
+            return new TaskInfo(task, recurrence, homeId);
+          }
+          throw new DbEntityNotFoundException("Task not found");
+        }
+
       }
     }
   }

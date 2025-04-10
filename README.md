@@ -80,9 +80,9 @@ This is an API implemented in Java using Spring Boot. It provides both RESTful a
 
 ### WebSocket Endpoints
 
-- Connection endpoint: `ws://localhost:8080/api/websocket`
-- Subscribe to home users: `/topic/home-users/{homeID}`
-- Subscribe to home tasks: `/topic/home-tasks/{homeID}`
+- Connection endpoint: `/websocket`
+- Subscribe to home users: `/topic/homes/{homeId}/residents`
+- Subscribe to home tasks: `/topic/homes/{homeId}/tasks`
 
 ## Authors
 

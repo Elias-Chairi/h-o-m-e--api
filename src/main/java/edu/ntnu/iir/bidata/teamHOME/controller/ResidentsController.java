@@ -4,6 +4,7 @@ import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.ResidentsResource;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelResident;
 import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
+import edu.ntnu.iir.bidata.teamhome.service.NotificationService;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbForeignKeyViolationException;
 import edu.ntnu.iir.bidata.teamhome.util.EntityResourceMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,10 +19,12 @@ import java.net.URI;
 import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -30,6 +33,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RestController
 public class ResidentsController {
   private static final Logger logger = LoggerFactory.getLogger(ResidentsController.class);
+  private final NotificationService notificationService;
+
+  @Autowired
+  public ResidentsController(NotificationService notificationService) {
+    this.notificationService = notificationService;
+  }
 
   /**
    * Create a resident.
@@ -62,15 +71,21 @@ public class ResidentsController {
           TopLevelResident req,
       @Parameter(description = "The ID of the home to create residents in") @PathVariable
           String homeId,
+      @RequestHeader("X-Client-Id") String clientId,
       UriComponentsBuilder uriBuilder) {
     try {
       Resident resident =
           MysqlService.getInstance()
               .createResident(EntityResourceMapper.fromResource(req.getData(), homeId));
+      
+      ResidentsResource residentResource = ResidentsResource.fromEntity(resident);
+
+      this.notificationService.notifyResidentCreation(homeId, residentResource);
+
       URI location =
           uriBuilder.path("/api/residents/{id}").buildAndExpand(resident.getId()).toUri();
       return ResponseEntity.created(location)
-          .body(new TopLevelResident(ResidentsResource.fromEntity(resident)));
+          .body(new TopLevelResident(residentResource));
     } catch (DbForeignKeyViolationException e) {
       return ResponseEntity.notFound().build();
     } catch (SQLException e) {

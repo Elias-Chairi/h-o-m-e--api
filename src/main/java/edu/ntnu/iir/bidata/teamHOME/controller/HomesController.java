@@ -46,7 +46,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Tag(name = "Home", description = "The Home API")
 @RestController
 public class HomesController {
-  // private SimpMessagingTemplate template;
   private static final Logger logger = LoggerFactory.getLogger(HomesController.class);
 
   /**

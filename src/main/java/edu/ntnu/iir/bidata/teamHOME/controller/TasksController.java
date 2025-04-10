@@ -2,6 +2,8 @@ package edu.ntnu.iir.bidata.teamhome.controller;
 
 import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
+import edu.ntnu.iir.bidata.teamhome.entityupdate.TaskUpdate;
+import edu.ntnu.iir.bidata.teamhome.entitywrapper.TaskInfo;
 import edu.ntnu.iir.bidata.teamhome.response.attributesobject.TasksAttributes;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.RecurrenceResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
@@ -9,6 +11,7 @@ import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelRecurrence;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelTask;
 import edu.ntnu.iir.bidata.teamhome.response.toplevel.TopLevelTaskUpdate;
 import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
+import edu.ntnu.iir.bidata.teamhome.service.NotificationService;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbEntityNotFoundException;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbForeignKeyViolationException;
 import edu.ntnu.iir.bidata.teamhome.util.EntityResourceMapper;
@@ -25,6 +28,7 @@ import java.net.URI;
 import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,6 +36,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -39,8 +44,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Tag(name = "Task", description = "The Task API")
 @RestController
 public class TasksController {
-  // private SimpMessagingTemplate template;
   private static final Logger logger = LoggerFactory.getLogger(HomesController.class);
+  private final NotificationService notificationService;
+
+  @Autowired
+  public TasksController(NotificationService notificationService) {
+    this.notificationService = notificationService;
+  }
 
   /**
    * Create a task.
@@ -75,12 +85,16 @@ public class TasksController {
       @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody TopLevelTask req,
       @Parameter(description = "The ID of the residents that creates the task") @PathVariable
           int residentId,
+      @RequestHeader("X-Client-Id") String clientId,
       UriComponentsBuilder uriBuilder) {
     try {
       Task task =
           MysqlService.getInstance()
               .createTask(EntityResourceMapper.fromResource(req.getData(), residentId));
       TasksResource<TasksAttributes> resource = TasksResource.fromEntity(task);
+
+      notificationService.notifyTaskCreation(Integer.parseInt(resource.getId()), clientId);
+
       URI location = uriBuilder.path("/api/tasks/{id}").buildAndExpand(task.getId()).toUri();
       return ResponseEntity.created(location).body(new TopLevelTask(resource));
     } catch (BadResourceException e) {
@@ -128,6 +142,7 @@ public class TasksController {
           TopLevelRecurrence req,
       @Parameter(description = "The ID of the task to create the recurrence for") @PathVariable
           int taskId,
+      @RequestHeader("X-Client-Id") String clientId,
       UriComponentsBuilder uriBuilder) {
     try {
 
@@ -135,9 +150,11 @@ public class TasksController {
           MysqlService.getInstance()
               .createRecurrence(EntityResourceMapper.fromResource(req.getData()), taskId);
 
-      RecurrenceResource resource = RecurrenceResource.fromEntity(recurrence);
+      this.notificationService.notifyRecurrenceCreation(taskId, clientId);
+
       URI location = uriBuilder.path("/api/tasks/{id}").buildAndExpand(recurrence.getId()).toUri();
-      return ResponseEntity.created(location).body(new TopLevelRecurrence(resource));
+      return ResponseEntity.created(location).body(
+        new TopLevelRecurrence(RecurrenceResource.fromEntity(recurrence)));
     } catch (DbEntityNotFoundException e) {
       return ResponseEntity.notFound().build();
     } catch (DbForeignKeyViolationException e) {
@@ -172,10 +189,14 @@ public class TasksController {
       @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody
           TopLevelTaskUpdate req,
       @Parameter(description = "The ID of the task to update") @PathVariable int taskId,
+      @RequestHeader("X-Client-Id") String clientId,
       UriComponentsBuilder uriBuilder) {
     try {
-      MysqlService.getInstance()
-          .updateTask(EntityResourceMapper.fromResource(req.getData()), taskId);
+      TaskUpdate update = EntityResourceMapper.fromResource(req.getData());
+      MysqlService.getInstance().updateTask(update, taskId);
+
+      this.notificationService.notifyTaskUpdate(taskId, clientId);
+
       URI location = uriBuilder.path("/api/tasks/{id}").buildAndExpand(taskId).toUri();
       return ResponseEntity.noContent().location(location).build();
     } catch (IllegalArgumentException | BadResourceException e) {
@@ -207,9 +228,14 @@ public class TasksController {
       })
   @DeleteMapping("/api/tasks/{taskId}")
   public ResponseEntity<Void> deleteTask(
-      @Parameter(description = "The ID of the task to delete") @PathVariable int taskId) {
+      @Parameter(description = "The ID of the task to delete") @PathVariable int taskId,
+      @RequestHeader("X-Client-Id") String clientId) {
     try {
+      TaskInfo taskInfo = MysqlService.getInstance().getTaskInfo(taskId);
       MysqlService.getInstance().deleteTask(taskId);
+
+      this.notificationService.notifyTaskRemoval(taskInfo.getHomeId(), taskId, clientId);
+
       return ResponseEntity.noContent().build();
     } catch (DbEntityNotFoundException e) {
       return ResponseEntity.notFound().build();
