@@ -73,7 +73,7 @@ public class ResidentsController {
           TopLevelResident req,
       @Parameter(description = "The ID of the home to create residents in") @PathVariable
           String homeId,
-      @RequestHeader("X-Client-Id") String clientId,
+      @RequestHeader(name = "X-Client-Id", required = false) String clientId,
       UriComponentsBuilder uriBuilder) {
     try {
       Resident resident = 

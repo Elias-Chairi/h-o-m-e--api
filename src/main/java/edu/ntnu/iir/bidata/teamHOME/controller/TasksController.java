@@ -87,7 +87,7 @@ public class TasksController {
       @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody TopLevelTask req,
       @Parameter(description = "The ID of the residents that creates the task") @PathVariable
           int residentId,
-      @RequestHeader("X-Client-Id") String clientId,
+      @RequestHeader(name = "X-Client-Id", required = false) String clientId,
       UriComponentsBuilder uriBuilder) {
     try {
       Task task =
@@ -143,7 +143,7 @@ public class TasksController {
           TopLevelRecurrence req,
       @Parameter(description = "The ID of the task to create the recurrence for") @PathVariable
           int taskId,
-      @RequestHeader("X-Client-Id") String clientId,
+      @RequestHeader(name = "X-Client-Id", required = false) String clientId,
       UriComponentsBuilder uriBuilder) {
     try {
 
@@ -189,7 +189,7 @@ public class TasksController {
       @io.swagger.v3.oas.annotations.parameters.RequestBody @Valid @RequestBody
           TopLevelTaskUpdate req,
       @Parameter(description = "The ID of the task to update") @PathVariable int taskId,
-      @RequestHeader("X-Client-Id") String clientId,
+      @RequestHeader(name = "X-Client-Id", required = false) String clientId,
       UriComponentsBuilder uriBuilder) {
     try {
       TaskUpdate update = EntityResourceMapper.fromResource(req.getData());
@@ -229,7 +229,7 @@ public class TasksController {
   @DeleteMapping("/api/tasks/{taskId}")
   public ResponseEntity<Void> deleteTask(
       @Parameter(description = "The ID of the task to delete") @PathVariable int taskId,
-      @RequestHeader("X-Client-Id") String clientId) {
+      @RequestHeader(name = "X-Client-Id", required = false) String clientId) {
     try {
       TaskInfo taskInfo = mysqlService.getTaskInfo(taskId);
       mysqlService.deleteTask(taskId);
