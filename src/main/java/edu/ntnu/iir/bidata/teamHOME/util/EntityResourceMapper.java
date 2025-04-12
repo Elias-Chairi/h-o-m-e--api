@@ -4,9 +4,8 @@ import edu.ntnu.iir.bidata.teamhome.enity.Home;
 import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
+import edu.ntnu.iir.bidata.teamhome.entityupdate.RecurrenceUpdate;
 import edu.ntnu.iir.bidata.teamhome.entityupdate.TaskUpdate;
-import edu.ntnu.iir.bidata.teamhome.response.attributesobject.TasksAttributes;
-import edu.ntnu.iir.bidata.teamhome.response.attributesobject.TasksUpdateAttributes;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
@@ -14,6 +13,10 @@ import edu.ntnu.iir.bidata.teamhome.response.resourceobject.HomesResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.RecurrenceResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.ResidentsResource;
 import edu.ntnu.iir.bidata.teamhome.response.resourceobject.TasksResource;
+import edu.ntnu.iir.bidata.teamhome.response.resourceobjectattributes.RecurrenceAttributes;
+import edu.ntnu.iir.bidata.teamhome.response.resourceobjectattributes.RecurrenceUpdateAttributes;
+import edu.ntnu.iir.bidata.teamhome.response.resourceobjectattributes.TasksAttributes;
+import edu.ntnu.iir.bidata.teamhome.response.resourceobjectattributes.TasksUpdateAttributes;
 import edu.ntnu.iir.bidata.teamhome.util.exception.BadResourceException;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -53,7 +56,7 @@ public class EntityResourceMapper {
    * @return The mapped TaskUpdate object.
    * @throws BadResourceException If the resource object is invalid.
    */
-  public static TaskUpdate fromResource(TasksResource<TasksUpdateAttributes> tasksResource)
+  public static TaskUpdate fromUpdateResource(TasksResource<TasksUpdateAttributes> tasksResource)
       throws BadResourceException {
     TasksUpdateAttributes att = tasksResource.getAttributes();
     if (att == null) {
@@ -78,7 +81,6 @@ public class EntityResourceMapper {
     } catch (NullPointerException e) {
       throw new BadResourceException("Invalid attributes object found in resource object", e);
     }
-
 
     Map<String, RelationshipObject> relationships = tasksResource.getRelationships();
     if (relationships == null) {
@@ -173,13 +175,49 @@ public class EntityResourceMapper {
   }
 
   /**
+   * Maps a RecurrenceResource to a RecurrenceUpdate.
+   *
+   * @param recurrenceResource The resource object to map.
+   * @return The mapped RecurrenceUpdate object.
+   * @throws BadResourceException If the resource object is invalid.
+   */
+  public static RecurrenceUpdate fromUpdateResource(
+      RecurrenceResource<RecurrenceUpdateAttributes> recurrenceResource)
+      throws BadResourceException {
+
+    RecurrenceUpdateAttributes att = recurrenceResource.getAttributes();
+    if (att == null) {
+      throw new BadResourceException("Invalid attributes object found in resource object");
+    }
+
+    RecurrenceUpdate update = new RecurrenceUpdate();
+
+    try {
+      att.getIntervalDays().ifPresent(intervalDays -> {
+        update.setIntervalDays(intervalDays);
+      });
+      att.getStartDate().ifPresent(startDate -> {
+        update.setStartDate(startDate);
+      });
+      att.getEndDate().ifPresent(endDate -> {
+        update.setEndDate(endDate);
+      });
+    } catch (NullPointerException e) {
+      throw new BadResourceException("Invalid attributes object found in resource object", e);
+    }
+
+    return update;
+  }
+
+  /**
    * Maps a RecurrenceResource to a Recurrence.
    *
    * @param recurrenceResource The resource object to map.
    * @return The mapped Recurrence object.
    */
-  public static Recurrence fromResource(RecurrenceResource recurrenceResource) {
-    RecurrenceResource.RecurrenceAttributes att = recurrenceResource.getAttributes();
+  public static Recurrence fromResource(
+      RecurrenceResource<RecurrenceAttributes> recurrenceResource) {
+    RecurrenceAttributes att = recurrenceResource.getAttributes();
     return new Recurrence(
         att.getIntervalDays(),
         att.getStartDate(),

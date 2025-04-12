@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamhome.response.attributesobject;
+package edu.ntnu.iir.bidata.teamhome.response.resourceobjectattributes;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

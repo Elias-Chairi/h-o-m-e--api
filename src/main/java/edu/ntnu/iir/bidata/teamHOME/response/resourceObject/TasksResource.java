@@ -1,11 +1,11 @@
 package edu.ntnu.iir.bidata.teamhome.response.resourceobject;
 
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
-import edu.ntnu.iir.bidata.teamhome.response.attributesobject.TasksAttributes;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.RelationshipObjectToOne;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceIdentifierObject;
 import edu.ntnu.iir.bidata.teamhome.response.jsonapi.ResourceObject;
+import edu.ntnu.iir.bidata.teamhome.response.resourceobjectattributes.TasksAttributes;
 import io.micrometer.common.lang.NonNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.HashMap;

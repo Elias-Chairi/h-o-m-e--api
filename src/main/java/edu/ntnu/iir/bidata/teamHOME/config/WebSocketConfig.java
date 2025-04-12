@@ -1,12 +1,14 @@
 package edu.ntnu.iir.bidata.teamhome.config;
 
+import com.google.gson.Gson;
 import java.io.EOFException;
-import java.io.IOException;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.converter.GsonMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -24,6 +26,23 @@ import org.springframework.web.socket.handler.WebSocketHandlerDecoratorFactory;
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   private static final Logger logger = LoggerFactory.getLogger(WebSocketConfig.class);
+
+  private final Gson gson;
+
+  public WebSocketConfig(Gson gson) {
+    this.gson = gson;
+  }
+
+  /**
+   * Configure the message converters.
+   * This method adds a GsonMessageConverter to the list of message converters.
+   */
+  @Override
+  public boolean configureMessageConverters(List<MessageConverter> messageConverters) {
+    messageConverters.clear();
+    messageConverters.add(new GsonMessageConverter(gson));
+    return false;
+  }
 
   /**
    * Configure the message broker.
@@ -54,8 +73,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
       public WebSocketHandler decorate(WebSocketHandler handler) {
         return new WebSocketHandlerDecorator(handler) {
           @Override
-          public void handleTransportError(WebSocketSession session, Throwable exception) throws 
-              Exception {
+          public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
             if (exception instanceof EOFException) {
               logger.info("Client disconnected: " + session.getId());
               return;

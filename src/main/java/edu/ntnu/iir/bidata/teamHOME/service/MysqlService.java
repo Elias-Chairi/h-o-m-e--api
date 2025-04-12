@@ -5,6 +5,7 @@ import edu.ntnu.iir.bidata.teamhome.enity.Home;
 import edu.ntnu.iir.bidata.teamhome.enity.Recurrence;
 import edu.ntnu.iir.bidata.teamhome.enity.Resident;
 import edu.ntnu.iir.bidata.teamhome.enity.Task;
+import edu.ntnu.iir.bidata.teamhome.entityupdate.RecurrenceUpdate;
 import edu.ntnu.iir.bidata.teamhome.entityupdate.TaskUpdate;
 import edu.ntnu.iir.bidata.teamhome.entitywrapper.TaskInfo;
 import edu.ntnu.iir.bidata.teamhome.service.exception.DbEntityNotFoundException;
@@ -498,6 +499,57 @@ public class MysqlService {
           recurrence.getIntervalDays(),
           recurrence.getStartDate(),
           recurrence.getEndDate());
+    }
+  }
+
+  /**
+   * Updates a recurrence in the database.
+   *
+   * @param recurrence The recurrence to update.
+   * @param taskId     The ID of the task to update the recurrence for.
+   * @throws DbEntityNotFoundException if the task is not found.
+   * @throws SQLException               if an error occurs while updating the
+   *                                    recurrence.
+   */
+  public void updateRecurrence(RecurrenceUpdate recurrence, int taskId) throws SQLException {
+    try (Connection connection = DriverManager.getConnection(this.connectionString)) {
+      String query = "UPDATE Recurrence SET ";
+      if (recurrence.getIntervalDays().isPresent()) {
+        query += "interval_days = ?, ";
+      }
+      if (recurrence.getStartDate().isPresent()) {
+        query += "start_date = ?, ";
+      }
+      if (recurrence.getEndDate().isPresent()) {
+        query += "end_date = ?, ";
+      }
+      query = query.substring(0, query.length() - 2); // remove last comma
+      query += " WHERE recurrence_id = (SELECT recurrence_id FROM Task WHERE task_id = ?)";
+      try (PreparedStatement statement = connection.prepareStatement(query)) {
+        int i = 1;
+        if (recurrence.getIntervalDays().isPresent()) {
+          statement.setInt(i, recurrence.getIntervalDays().get());
+          i++;
+        }
+        if (recurrence.getStartDate().isPresent()) {
+          statement.setDate(i, Date.valueOf(recurrence.getStartDate().get()));
+          i++;
+        }
+        if (recurrence.getEndDate().isPresent()) {
+          if (recurrence.getEndDate().get() == null) {
+            statement.setNull(i, java.sql.Types.DATE);
+          } else {
+            statement.setDate(i, Date.valueOf(recurrence.getEndDate().get()));
+          }
+          i++;
+        }
+        statement.setInt(i, taskId);
+        int effectedRows = statement.executeUpdate();
+        if (effectedRows == 0) {
+          throw new DbEntityNotFoundException("Task not found");
+        }
+      }
+
     }
   }
 

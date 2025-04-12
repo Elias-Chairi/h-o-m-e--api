@@ -72,7 +72,6 @@ public class GsonConfig {
   @Bean
   public Gson gson() {
     return new GsonBuilder()
-        .setPrettyPrinting()
         .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
         .registerTypeAdapter(RelationshipObject.class, new RelationshipObjectAdapter())
         .registerTypeAdapterFactory(new NullableOptionalTypeAdapterFactory())

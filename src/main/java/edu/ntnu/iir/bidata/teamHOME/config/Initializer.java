@@ -4,7 +4,6 @@ import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
 import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +17,6 @@ public class Initializer implements SmartLifecycle {
   private volatile boolean isRunning = false;
   private final MysqlService mysqlService;
 
-  @Autowired
   public Initializer(MysqlService mysqlService) {
     this.mysqlService = mysqlService;
   }

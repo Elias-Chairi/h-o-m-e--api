@@ -14,7 +14,6 @@ import java.sql.SQLException;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -29,8 +28,6 @@ public class NotificationService {
   private final SimpMessagingTemplate template;
   private final MysqlService mysqlService;
 
-
-  @Autowired
   public NotificationService(SimpMessagingTemplate template, MysqlService mysqlService) {
     this.template = template;
     this.mysqlService = mysqlService;
@@ -105,14 +102,14 @@ public class NotificationService {
   public void notifyTaskUpdate(int taskId, String clientId) {
     notifyTask(taskId, Action.UPDATE, clientId);
   }
-
+  
   /**
-   * Notify the client about the creation of a recurrence.
+   * Notify the client about the update of a task recurrence.
    *
    * @param taskId The ID of the task.
+   * @param action The action performed on the task (ADD, REMOVE, UPDATE).
    */
-  @Async
-  public void notifyRecurrenceCreation(int taskId, String clientId) {
+  private void notifyTaskRecurrence(int taskId, Action action, String clientId) {
     TaskInfo taskInfo;
     try {
       taskInfo = mysqlService.getTaskInfo(taskId);
@@ -126,6 +123,26 @@ public class NotificationService {
     this.template.convertAndSend(
         "/topic/homes/" + taskInfo.getHomeId() + "/tasks",
         new CompoundDocumentMeta(
-            TasksResource.fromEntity(taskInfo.getTask()), included, Action.UPDATE, clientId));
+            TasksResource.fromEntity(taskInfo.getTask()), included, action, clientId));
+  }
+
+  /**
+   * Notify the client about the update of a task recurrence.
+   *
+   * @param taskId The ID of the task.
+   */
+  @Async
+  public void notifyRecurrenceUpdate(int taskId, String clientId) {
+    notifyTaskRecurrence(taskId, Action.UPDATE, clientId);
+  }
+
+  /**
+   * Notify the client about the creation of a recurrence.
+   *
+   * @param taskId The ID of the task.
+   */
+  @Async
+  public void notifyRecurrenceCreation(int taskId, String clientId) {
+    notifyTaskRecurrence(taskId, Action.UPDATE, clientId);
   }
 }

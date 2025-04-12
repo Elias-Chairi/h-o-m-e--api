@@ -1,4 +1,4 @@
-package edu.ntnu.iir.bidata.teamhome.response.attributesobject;
+package edu.ntnu.iir.bidata.teamhome.response.resourceobjectattributes;
 
 import edu.ntnu.iir.bidata.teamhome.service.MysqlService;
 import edu.ntnu.iir.bidata.teamhome.util.NullableOptional;
