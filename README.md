@@ -9,6 +9,7 @@ This is an API implemented in Java using Spring Boot. It provides both RESTful a
 - REST API for home and task management
 - WebSocket (STOMP) for real-time communication
 - MySQL database integration using Spring Data JPA
+- Follows [JSON:API v1.1](https://jsonapi.org/format/1.1/) specification
 
 ## Technologies Used
 
@@ -65,8 +66,11 @@ This is an API implemented in Java using Spring Boot. It provides both RESTful a
 
 ### REST Endpoints
 
+> All REST responses follow the [JSON:API v1.1](https://jsonapi.org/format/1.1/) specification.
+
 #### Task
 - `POST /api/tasks/{taskId}/relationships/recurrence` Create a recurrence
+- `PATCH /api/tasks/{taskId}/relationships/recurrence` Update a recurrence
 - `POST /api/residents/{residentId}/tasks` Create a task
 - `DELETE /api/tasks/{taskId}` Delete a task
 - `PATCH /api/tasks/{taskId}` Update a task
